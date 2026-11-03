@@ -7,7 +7,9 @@ Tarayıcıda açılan bir arayüzü vardır (`http://127.0.0.1:8765`), internet 
 
 Gerekli: Python 3.9 veya üzeri (Windows için python.org'dan, kurulumda "Add Python to PATH" işaretli olsun).
 
-- **Windows:** `baslat.bat` dosyasına çift tıklayın. İlk çalıştırmada gerekli paketler kurulur, sonra tarayıcı açılır.
+- **Windows:** `baslat.bat` dosyasına çift tıklayın. İlk çalıştırmada gerekli paketler kurulur (internet gerekir), sonra tarayıcı açılır.
+  Klasör ağ sürücüsünde (`\\sunucu\...`) olsa da çalışır. Sanal ortam `%LOCALAPPDATA%\modbus-tester\venv` altına kurulur;
+  sorun olursa bu klasörü silip tekrar çalıştırmak yeterli.
 - **Linux / macOS:** `./baslat.sh`
 - Elle: `pip install -r requirements.txt` ve ardından `python app.py`
 
