@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modbus Cihaz Test Aracı</title>
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--fg:#1d2330;--mut:#667085;--line:#d9dee7;--acc:#1f5fbf;--ok:#1e7d3a;--okb:#dcf3e2;--fail:#b42318;--failb:#fde3e1;--warn:#8a6100;--warnb:#fff3c4;--skipb:#eceef2}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.4 "Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+header{background:#14213d;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:16px}
+header h1{font-size:18px;margin:0;font-weight:600}
+header .sub{opacity:.7;font-size:12px}
+main{padding:16px 20px;display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:start}
+@media(max-width:1000px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:2px}
+input[type=text],input[type=number],select,textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:5px;font:inherit;background:#fff;color:inherit}
+textarea{font-family:Consolas,monospace;font-size:12px}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg);margin:4px 0}
+.chk input{margin:0}
+button{padding:7px 14px;border-radius:5px;border:1px solid var(--line);background:#fff;font:inherit;cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+button.dan{background:#fff;border-color:var(--fail);color:var(--fail)}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.row>*{flex:1}
+.row>button{flex:0 0 auto}
+.tabs{display:flex;gap:4px;margin-bottom:-1px}
+.tabs button{border-radius:6px 6px 0 0;border-bottom:none;background:#e7ebf2}
+.tabs button.on{background:#fff;font-weight:600}
+.tabpane{border-top-left-radius:0}
+.msg{font-size:13px;padding:6px 8px;border-radius:5px;margin-top:8px}
+.msg.ok{background:var(--okb);color:var(--ok)} .msg.err{background:var(--failb);color:var(--fail)} .msg.info{background:#e8effb;color:#1f3d7a}
+.stat{display:inline-block;padding:3px 8px;border-radius:4px;margin:2px 4px 2px 0;font-size:12px;font-weight:600;background:var(--skipb)}
+.s-OK{background:var(--okb);color:var(--ok)} .s-HATA{background:var(--failb);color:var(--fail)} .s-UYARI{background:var(--warnb);color:var(--warn)} .s-ATLANDI{background:var(--skipb);color:#555}
+.tblwrap{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{border-bottom:1px solid #eef0f4;padding:4px 6px;text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:#f7f8fb;z-index:1;font-weight:600}
+td.nm{white-space:normal;min-width:180px}
+tr.sec td{background:#e8edf7;font-weight:600}
+tr.skip td{color:#999;text-decoration:line-through}
+tr.comm td{background:#fff8e6}
+.prog{height:10px;background:#e7ebf2;border-radius:5px;overflow:hidden;margin:8px 0}
+.prog div{height:100%;background:var(--acc);width:0;transition:width .3s}
+#log{background:#0f1525;color:#cfd8e8;font:12px/1.35 Consolas,monospace;height:280px;overflow:auto;padding:8px;border-radius:6px;white-space:pre-wrap}
+.links a{margin-right:10px;font-weight:600}
+.warnlist{max-height:110px;overflow:auto;font-size:12px;color:var(--warn);background:var(--warnb);padding:6px 8px;border-radius:5px;margin-top:8px}
+.param{border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:8px}
+.param .row{align-items:center}
+.hint{font-size:12px;color:var(--mut);margin:4px 0 8px}
+.pill{font-size:11px;padding:1px 6px;border-radius:9px;background:#e8effb;color:#1f3d7a;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>Modbus Cihaz Test Aracı</h1>
+  <span class="sub">Register tablosuna göre okuma / yazma / blok testleri ve haberleşme ayarı taraması</span>
+</header>
+<main>
+<div>
+  <div class="card">
+    <h2>1. Bağlantı ayarları</h2>
+    <div class="grid2">
+      <div style="grid-column:span 2"><label>Bağlantı tipi</label>
+        <select id="transport">
+          <option value="rtu">Modbus RTU (seri port / RS485)</option>
+          <option value="tcp">Modbus TCP</option>
+          <option value="rtu_over_tcp">Modbus RTU over TCP</option>
+          <option value="sim">Simülatör (cihazsız deneme)</option>
+        </select></div>
+      <div style="grid-column:span 2" id="portBox"><label id="portLbl">Port</label>
+        <div class="row"><select id="portSel"></select><input type="text" id="port" placeholder="COM3 / /dev/ttyUSB0" style="display:none"><button id="refreshPorts" title="Portları yenile">↻</button></div></div>
+      <div><label>Slave adresi</label><input type="number" id="slave" value="1" min="0" max="247"></div>
+      <div><label>Baud rate</label>
+        <select id="baudrate"><option>1200</option><option>2400</option><option>4800</option><option selected>9600</option><option>14400</option><option>19200</option><option>38400</option><option>57600</option><option>115200</option></select></div>
+      <div><label>Parity</label><select id="parity"><option value="N">None</option><option value="E">Even</option><option value="O">Odd</option></select></div>
+      <div><label>Data bit</label><select id="bytesize"><option>8</option><option>7</option></select></div>
+      <div><label>Stop bit</label><select id="stopbits"><option value="1">1</option><option value="2">2</option></select></div>
+      <div><label>Zaman aşımı (ms)</label><input type="number" id="timeout_ms" value="500"></div>
+      <div><label>Tekrar sayısı</label><input type="number" id="retries" value="1" min="0" max="5"></div>
+      <div><label>İstekler arası bekleme (ms)</label><input type="number" id="delay_ms" value="20"></div>
+    </div>
+    <div id="simBox" style="display:none"><label class="chk"><input type="checkbox" id="sim_faults"> Simülatöre örnek hatalar ekle (rapor demosu)</label></div>
+    <div class="row" style="margin-top:10px"><input type="number" id="probeAddr" placeholder="Register (boş = tablodaki ilk)"><button id="probeBtn">Bağlantıyı dene</button></div>
+    <div id="probeMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>2. Register tablosu</h2>
+    <div class="hint">PDF, Excel (.xlsx) veya CSV. Kolonlar: Address, Address Hex, Format, Word Counts, Designation, Unit, R/W, Remarks, Multiplier, Value If Not Available, Min, Max (Türkçe başlıklar da tanınır).</div>
+    <input type="file" id="file" accept=".pdf,.xlsx,.xlsm,.csv,.txt,.json">
+    <div id="tableMsg"></div>
+    <div id="tableWarn"></div>
+    <div style="margin-top:8px" id="exportBox" hidden><a href="/api/table/export.csv">Tabloyu CSV olarak indir (düzenleyip tekrar yükleyebilirsiniz)</a></div>
+  </div>
+</div>
+
+<div>
+  <div class="tabs"><button class="on" data-tab="t1">3a. Register testi</button><button data-tab="t2">3b. Haberleşme ayarı tarama modu</button><button data-tab="t3">Register listesi</button></div>
+  <div class="card tabpane" id="t1">
+    <div class="grid2">
+      <div>
+        <label class="chk"><input type="checkbox" id="o_single_write" checked> Tekli yazma + geri okuma doğrulaması (R/W)</label>
+        <label class="chk"><input type="checkbox" id="o_test_boundaries" checked> Min ve Max değerlerinin ikisini de yaz</label>
+        <label class="chk"><input type="checkbox" id="o_block_read" checked> Blok okuma (FC03/04, bitişik registerlar)</label>
+        <label class="chk"><input type="checkbox" id="o_block_write" checked> Blok yazma (FC16) + blok geri okuma</label>
+        <label class="chk"><input type="checkbox" id="o_restore" checked> Testten sonra orijinal değerleri geri yaz</label>
+      </div>
+      <div>
+        <label class="chk"><input type="checkbox" id="o_ro_protection" checked> Salt okunur (R) registerlar yazmayı reddetmeli</label>
+        <label class="chk"><input type="checkbox" id="o_range_protection"> Aralık dışı değer (Min-1 / Max+1) reddedilmeli</label>
+        <label class="chk"><input type="checkbox" id="o_write_only_regs"> Sadece yazılabilir (W) registerlara yaz</label>
+        <label class="chk"><input type="checkbox" id="o_skip_comm" checked> Haberleşme ayar registerlarını yazma testinden çıkar</label>
+        <label class="chk"><input type="checkbox" id="o_word_order_big" checked> 32-bit değerlerde yüksek word önce</label>
+      </div>
+      <div><label>R registerlar için okuma fonksiyonu</label><select id="o_read_fc"><option value="3">FC03 Holding Register</option><option value="4">FC04 Input Register</option></select></div>
+      <div><label>Blok boyutu (register)</label><input type="number" id="o_block_size" value="16" min="2" max="123"></div>
+      <div><label>Yazma sonrası bekleme (ms)</label><input type="number" id="o_settle_ms" value="0"></div>
+      <div><label>Adres ofseti (tablo − ofset = protokol adresi)</label><input type="number" id="o_address_offset" value="0"></div>
+    </div>
+    <div class="row" style="margin-top:12px"><input type="text" id="t1title" placeholder="Rapor başlığı (isteğe bağlı)"><button class="pri" id="startTest">Testi başlat</button></div>
+  </div>
+
+  <div class="card tabpane" id="t2" hidden>
+    <div class="hint">Cihazın haberleşme parametrelerini sırayla değiştirir, her değişiklikten sonra yeni ayarla bağlanıp cihazın yanıt verdiğini, register değerini ve kısa bir fonksiyon testini (blok okuma + yazma/geri okuma) doğrular. Sonunda orijinal ayarlara geri döner. Başlangıç ayarı soldaki bağlantı ayarlarıdır.</div>
+    <div id="params"></div>
+    <div class="row" style="margin-bottom:10px"><select id="newKind"><option value="address">Modbus adres</option><option value="baud">Baud rate</option><option value="parity">Parity</option><option value="stopbits">Stop bit</option><option value="databits">Data bit</option></select><button id="addParam">+ Parametre ekle</button></div>
+    <div class="grid2">
+      <div><label>Mod</label><select id="s_mode"><option value="sequential">Sıralı (her parametre tek tek)</option><option value="matrix">Tüm kombinasyonlar</option></select></div>
+      <div><label>Ayar sonrası bekleme (ms)</label><input type="number" id="s_settle_ms" value="1500"></div>
+      <div><label>Doğrulama deneme sayısı</label><input type="number" id="s_verify_retries" value="3"></div>
+      <div><label>Ayarı uygulama registerı (ör. 17130=1, boş = yok)</label><input type="text" id="s_apply_register"></div>
+      <div><label class="chk"><input type="checkbox" id="s_functional_check" checked> Her ayarda fonksiyon testi</label>
+        <label class="chk"><input type="checkbox" id="s_check_old_silent"> Eski ayarla yanıt vermediğini kontrol et</label></div>
+      <div><label class="chk"><input type="checkbox" id="s_recovery_search" checked> Cihaz kaybolursa bilinen ayarlarda ara</label>
+        <label class="chk"><input type="checkbox" id="s_restore" checked> Sonunda orijinal ayarlara dön</label>
+        <label class="chk"><input type="checkbox" id="s_parity_none_2stop"> Parity None iken 2 stop bit</label></div>
+    </div>
+    <div class="row" style="margin-top:12px"><input type="text" id="t2title" placeholder="Rapor başlığı (isteğe bağlı)"><button class="pri" id="startScan">Taramayı başlat</button></div>
+  </div>
+
+  <div class="card tabpane" id="t3" hidden>
+    <div class="row" style="margin-bottom:8px"><input type="text" id="filter" placeholder="Ara: adres, isim, bölüm..."><button id="skipVisible">Görünenleri atla</button><button id="unskipVisible">Görünenleri dahil et</button></div>
+    <div class="hint">İşaretli registerlar testlere dahil edilmez. Turuncu satırlar haberleşme ayarı olarak algılandı.</div>
+    <div class="tblwrap"><table id="regTable"><thead><tr><th>Atla</th><th>Address</th><th>Hex</th><th>Format</th><th>Designation</th><th>R/W</th><th>Min</th><th>Max</th><th>Remarks</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Durum <span id="phase" class="pill"></span></h2>
+    <div class="row"><div><div class="prog"><div id="bar"></div></div></div><button class="dan" id="stopBtn" disabled>Durdur</button></div>
+    <div id="summary"></div>
+    <div id="links" class="links"></div>
+    <div id="log"></div>
+  </div>
+</div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+let TABLE=null, PARAMS=[], logLen=0, polling=null;
+const SAVE_IDS=["transport","port","slave","baudrate","parity","bytesize","stopbits","timeout_ms","retries","delay_ms"];
+function save(){try{const o={};SAVE_IDS.forEach(i=>o[i]=$("#"+i).value);o.portSel=$("#portSel").value;localStorage.setItem("mbt",JSON.stringify(o))}catch(e){}}
+function restore(){try{const o=JSON.parse(localStorage.getItem("mbt")||"{}");SAVE_IDS.forEach(i=>{if(o[i]!=null)$("#"+i).value=o[i]});return o}catch(e){return{}}}
+async function api(url,opt){const r=await fetch(url,opt);let j;try{j=await r.json()}catch(e){j={error:"Sunucu hatası "+r.status}}if(!r.ok&&!j.error)j.error="HTTP "+r.status;return j}
+function msg(el,text,cls){$(el).innerHTML=text?`<div class="msg ${cls}">${esc(text)}</div>`:""}
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+async function loadPorts(sel){
+  const j=await api("/api/ports");const ps=$("#portSel");ps.innerHTML="";
+  (j.ports||[]).forEach(p=>{const o=document.createElement("option");o.value=p.device;o.textContent=p.device+" — "+p.desc;ps.appendChild(o)});
+  const o=document.createElement("option");o.value="__manual";o.textContent="Elle gir...";ps.appendChild(o);
+  if(sel&&[...ps.options].some(x=>x.value==sel))ps.value=sel;
+  else if(!(j.ports||[]).length)ps.value="__manual";
+  portUI();
+}
+function portUI(){
+  const t=$("#transport").value;
+  const tcp=t=="tcp"||t=="rtu_over_tcp";
+  $("#portBox").style.display=t=="sim"?"none":"";
+  $("#simBox").style.display=t=="sim"?"":"none";
+  $("#portLbl").textContent=tcp?"Host:Port":"Seri port";
+  $("#portSel").style.display=tcp?"none":"";
+  $("#refreshPorts").style.display=tcp?"none":"";
+  $("#port").style.display=(tcp||$("#portSel").value=="__manual")?"":"none";
+  $("#port").placeholder=tcp?"192.168.1.10:502":"COM3 / /dev/ttyUSB0";
+  ["baudrate","parity","bytesize","stopbits"].forEach(i=>$("#"+i).disabled=tcp);
+}
+function conn(){
+  const t=$("#transport").value;let port=$("#port").value;
+  if(t=="rtu"&&$("#portSel").value!="__manual")port=$("#portSel").value;
+  if(t=="sim")port="SIM";
+  return{transport:t,port:port,slave:+$("#slave").value,baudrate:+$("#baudrate").value,parity:$("#parity").value,
+    bytesize:+$("#bytesize").value,stopbits:+$("#stopbits").value,timeout_ms:+$("#timeout_ms").value,retries:+$("#retries").value,delay_ms:+$("#delay_ms").value}
+}
+function setBaud(v){const s=$("#baudrate");if(![...s.options].some(o=>o.value==v)){const o=document.createElement("option");o.textContent=v;s.appendChild(o)}s.value=v}
+
+$("#transport").onchange=()=>{portUI();save()};
+$("#portSel").onchange=()=>{portUI();save()};
+$("#refreshPorts").onclick=()=>loadPorts($("#portSel").value);
+SAVE_IDS.forEach(i=>$("#"+i).addEventListener("change",save));
+
+$("#probeBtn").onclick=async()=>{
+  msg("#probeMsg","Deneniyor...","info");
+  const j=await api("/api/probe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({conn:conn(),address:$("#probeAddr").value,sim_faults:$("#sim_faults").checked,address_offset:$("#o_address_offset").value,fc:$("#o_read_fc").value})});
+  msg("#probeMsg",j.error||j.message,j.ok?"ok":"err");
+};
+
+$("#file").onchange=async()=>{
+  const f=$("#file").files[0];if(!f)return;
+  msg("#tableMsg","Okunuyor: "+f.name,"info");
+  const fd=new FormData();fd.append("file",f);
+  const j=await api("/api/table",{method:"POST",body:fd});
+  if(j.error){msg("#tableMsg",j.error,"err");return}
+  showTable(j);
+};
+function showTable(j){
+  TABLE=j;
+  if(!j.count){return}
+  msg("#tableMsg",`${j.name}: ${j.count} register (R: ${j.stats.R}, R/W: ${j.stats.RW}, W: ${j.stats.W}, atlanan: ${j.stats.skip})`,"ok");
+  $("#tableWarn").innerHTML=j.warnings.length?`<div class="warnlist"><b>Tablo uyarıları (${j.warnings.length}):</b><br>${j.warnings.map(esc).join("<br>")}</div>`:"";
+  $("#exportBox").hidden=false;
+  PARAMS=j.comm.map(p=>({...p}));renderParams();renderRegs();
+}
+function renderRegs(){
+  const tb=$("#regTable tbody");const q=$("#filter").value.toLowerCase();let html="",sec=null;
+  TABLE.registers.forEach(r=>{
+    const txt=(r.address+" "+r.hex+" "+r.name+" "+r.section+" "+r.remarks).toLowerCase();
+    if(q&&!txt.includes(q))return;
+    if(r.section!==sec){sec=r.section;html+=`<tr class="sec"><td colspan="9">${esc(sec||"")}</td></tr>`}
+    html+=`<tr class="${r.skip?"skip":""} ${r.comm_param?"comm":""}"><td><input type="checkbox" data-a="${r.address}" ${r.skip?"checked":""} ${r.access?"":"disabled"}></td><td>${r.address}</td><td>${esc(r.hex)}</td><td>${esc(r.fmt)}</td><td class="nm">${esc(r.name)}${r.comm_param?` <span class="pill">${r.comm_param}</span>`:""}</td><td>${esc(r.access_label)}</td><td>${r.min??""}</td><td>${r.max??""}</td><td class="nm">${esc(r.remarks)}</td></tr>`;
+  });
+  tb.innerHTML=html;
+  tb.querySelectorAll("input[type=checkbox]").forEach(c=>c.onchange=()=>{const r=TABLE.registers.find(x=>x.address==c.dataset.a);r.skip=c.checked;pushSkip();renderRegs()});
+}
+function visible(){const q=$("#filter").value.toLowerCase();return TABLE.registers.filter(r=>!q||(r.address+" "+r.hex+" "+r.name+" "+r.section+" "+r.remarks).toLowerCase().includes(q))}
+$("#filter").oninput=()=>TABLE&&renderRegs();
+$("#skipVisible").onclick=()=>{if(!TABLE)return;visible().forEach(r=>{if(r.access)r.skip=true});pushSkip();renderRegs()};
+$("#unskipVisible").onclick=()=>{if(!TABLE)return;visible().forEach(r=>{if(r.access)r.skip=false});pushSkip();renderRegs()};
+async function pushSkip(){await api("/api/table/skip",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({skip:TABLE.registers.filter(r=>r.skip&&r.access).map(r=>r.address)})})}
+
+const KIND={address:"Modbus adres",baud:"Baud rate",parity:"Parity",stopbits:"Stop bit",databits:"Data bit"};
+function renderParams(){
+  const box=$("#params");
+  if(!PARAMS.length){box.innerHTML=`<div class="msg info">Tabloda haberleşme ayar registerı otomatik bulunamadı. Aşağıdan parametre ekleyin.</div>`;return}
+  box.innerHTML=PARAMS.map((p,i)=>`<div class="param"><div class="row">
+    <label class="chk" style="flex:0 0 150px"><input type="checkbox" data-i="${i}" class="pen" ${p.enabled?"checked":""}> <b>${KIND[p.kind]}</b></label>
+    <div style="flex:0 0 110px"><label>Register</label><input type="number" class="preg" data-i="${i}" value="${p.register}"></div>
+    <div><label>Test değerleri (ham=ayar, virgülle) ${p.kind=="parity"?"— N/E/O":""}</label><input type="text" class="pval" data-i="${i}" value="${esc(p.values.map(v=>v.raw+"="+v.setting).join(", "))}"></div>
+    <button data-i="${i}" class="pdel" title="Kaldır">✕</button></div>
+    ${p.name?`<div class="hint" style="margin:4px 0 0">Tablodan: ${esc(p.name)}</div>`:""}</div>`).join("");
+  box.querySelectorAll(".pen").forEach(e=>e.onchange=()=>PARAMS[e.dataset.i].enabled=e.checked);
+  box.querySelectorAll(".preg").forEach(e=>e.onchange=()=>PARAMS[e.dataset.i].register=+e.value);
+  box.querySelectorAll(".pval").forEach(e=>e.onchange=()=>{PARAMS[e.dataset.i].values=parseVals(PARAMS[e.dataset.i].kind,e.value)});
+  box.querySelectorAll(".pdel").forEach(e=>e.onclick=()=>{PARAMS.splice(+e.dataset.i,1);renderParams()});
+}
+function parseVals(kind,s){
+  return s.split(/[,;]+/).map(x=>x.trim()).filter(Boolean).map(x=>{let [a,b]=x.split("=").map(y=>y.trim());if(b===undefined)b=a;
+    let set=b;if(kind=="parity")set=b.toUpperCase()[0];else if(kind=="stopbits")set=parseFloat(b);else set=parseInt(b);
+    return{raw:parseInt(a),setting:set}}).filter(v=>!isNaN(v.raw));
+}
+$("#addParam").onclick=()=>{const k=$("#newKind").value;PARAMS.push({kind:k,register:0,values:[],enabled:true,name:""});renderParams()};
+
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x==b));
+  ["t1","t2","t3"].forEach(t=>$("#"+t).hidden=t!=b.dataset.tab);
+});
+
+function testOptions(){const o={};document.querySelectorAll("[id^=o_]").forEach(e=>o[e.id.slice(2)]=e.type=="checkbox"?e.checked:e.value);return o}
+function scanOptions(){const o={};document.querySelectorAll("[id^=s_]").forEach(e=>o[e.id.slice(2)]=e.type=="checkbox"?e.checked:e.value);o.address_offset=$("#o_address_offset").value;o.read_fc=$("#o_read_fc").value;return o}
+
+$("#startTest").onclick=async()=>{
+  if(!TABLE||!TABLE.count){alert("Önce register tablosu yükleyin");return}
+  const j=await api("/api/test/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({conn:conn(),options:testOptions(),sim_faults:$("#sim_faults").checked,title:$("#t1title").value})});
+  if(j.error){alert(j.error);return}startPoll();
+};
+$("#startScan").onclick=async()=>{
+  if(!TABLE){alert("Önce register tablosu yükleyin");return}
+  const en=PARAMS.filter(p=>p.enabled);
+  if(!en.length){alert("Taranacak parametre seçin");return}
+  if(!confirm("Ayar tarama modu cihazın adres/baud/parity ayarlarını değiştirecek. Devam edilsin mi?"))return;
+  const j=await api("/api/scan/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({conn:conn(),params:PARAMS,options:scanOptions(),sim_faults:$("#sim_faults").checked,title:$("#t2title").value})});
+  if(j.error){alert(j.error);return}startPoll();
+};
+$("#stopBtn").onclick=()=>api("/api/stop",{method:"POST"});
+
+function startPoll(){logLen=0;$("#log").textContent="";$("#links").innerHTML="";$("#summary").innerHTML="";setBusy(true);clearInterval(polling);polling=setInterval(poll,500);poll()}
+function setBusy(b){$("#stopBtn").disabled=!b;$("#startTest").disabled=b;$("#startScan").disabled=b}
+async function poll(){
+  const j=await api("/api/status?since="+logLen);if(!j.job)return;
+  if(j.log.length){const L=$("#log");const atBottom=L.scrollTop+L.clientHeight>=L.scrollHeight-20;L.textContent+=j.log.join("\n")+"\n";logLen=j.log_len;if(atBottom)L.scrollTop=L.scrollHeight}
+  $("#bar").style.width=Math.round(j.progress*100)+"%";
+  $("#phase").textContent=j.done?(j.error?"Hata / durduruldu":"Tamamlandı"):j.phase;
+  if(j.summary){
+    if(j.kind=="test"&&j.summary.overall){const s=j.summary.overall;$("#summary").innerHTML=`<span class="stat">Toplam ${j.summary.total}</span>`+["OK","UYARI","HATA","ATLANDI"].map(k=>`<span class="stat s-${k}">${k}: ${s[k]}</span>`).join("")}
+    if(j.kind=="scan"&&j.summary.steps!=null){const s=j.summary;$("#summary").innerHTML=`<span class="stat">${s.steps} adım</span>`+["OK","UYARI","HATA"].map(k=>`<span class="stat s-${k}">${k}: ${s[k]}</span>`).join("")+(j.final_settings?` <span class="stat">Son ayar: ${esc(j.final_settings)}</span>`:"")}
+  }
+  if(j.aborted||j.error)$("#summary").innerHTML+=`<div class="msg err">${esc(j.aborted||j.error)}</div>`;
+  if(j.done){clearInterval(polling);setBusy(false);
+    const r=j.reports;$("#links").innerHTML=Object.keys(r).length?"Rapor: "+[["html","Görüntüle (HTML)"],["xlsx","Excel"],["csv","CSV"],["json","JSON"]].filter(x=>r[x[0]]).map(x=>`<a href="${r[x[0]]}" target="_blank">${x[1]}</a>`).join(""):"";
+    if(j.kind=="scan"&&j.final_settings){applyFinal(j.final_settings)}
+  }
+}
+function applyFinal(s){
+  // "adres=1 9600 8N1" -> baglanti ayarlarini guncelle (cihaz son bu ayarda)
+  const m=/adres=(\d+) (\d+) (\d)([NEO])([\d.]+)/.exec(s);if(!m)return;
+  $("#slave").value=m[1];setBaud(m[2]);$("#bytesize").value=m[3];$("#parity").value=m[4];$("#stopbits").value=String(parseFloat(m[5]));save();
+}
+
+(async()=>{const o=restore();await loadPorts(o.portSel);const j=await api("/api/table");if(j.count)showTable(j);
+  const s=await api("/api/status");if(s.job&&!s.done)startPoll();})();
+</script>
+</body>
+</html>

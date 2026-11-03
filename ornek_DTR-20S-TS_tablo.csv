@@ -1,0 +1,624 @@
+﻿Section;Address;Address Hex;Format;Word Counts;MCU Byte;Designation;Unit;R/W;Remarks;Multiplier;Value If Not Available;Min;Max
+Register Table;11000;2AF8;UINT16;1;2;DAY;Day;R;Adjustable 1-31;1;0x00FF;;
+Register Table;11001;2AF9;UINT16;1;2;MONTH;Month;R;Adjustable 1-12;1;0x00FF;;
+Register Table;11002;2AFA;UINT16;1;2;YEAR;Year;R;Adjustable 2000-2199;1;0x00FF;;
+Register Table;11003;2AFB;UINT16;1;2;HOUR;Hour;R;Adjustable 0-23;1;0x00FF;;
+Register Table;11004;2AFC;UINT16;1;2;MINUTES;Minute;R;Adjustable 0-59;1;0x00FF;;
+Register Table;11005;2AFD;UINT16;1;2;SECOND;Second;R;Adjustable 0-59;1;0x00FF;;
+Register Table;11006;2AFE;UINT16;1;2;DAY OF THE WEEK;Day;R;1: Monday 2: Tuesday 3:Wednesday 4:Thursday 5: Friday 6: Saturday 7: Sunday;1;0x00FF;;
+Register Table;11007;2AFF;UINT16;1;1;DST STATUS;Season;R;Adjustable 0-1;1;0x00FF;;
+Register Table;11008;2B00;UINT16;1;1;SUNRISE HOUR;Hour;R;;1;0x00FF;;
+Register Table;11009;2B01;UINT16;1;1;SUNRISE MINUTE;Minute;R;;1;0x00FF;;
+Register Table;11010;2B02;UINT16;1;1;SUNSET HOUR;Hour;R;;1;0x00FF;;
+Register Table;11011;2B03;UINT16;1;1;SUNSET MINUTE;Minute;R;;1;0x00FF;;
+Register Table;11012;2B04;UINT16;1;2;PROGRAM STATUS C1 H;Bit;R;0. bit : 17. Program 1. bit : 18. Program …;1;0x00FF;;
+Register Table;11013;2B05;UINT16;1;2;PROGRAM STATUS C1 L;Bit;R;0. bit : 1. Program 1. bit : 2. Program …;1;0x00FF;;
+Register Table;11014;2B06;UINT16;1;2;PROGRAM STATUS C2 H;bit;R;0. bit : 17. Program 1. bit : 18. Program …;1;0xFFFF;;
+Register Table;11015;2B07;UINT16;1;2;PROGRAM STATUS C2 L;bit;R;0. bit : 1. Program 1. bit : 2. Program …;1;0xFFFF;;
+Register Table;11016;2B08;UINT16;1;1;HOLIDAY STATUS;;R;0-5;1;0x00FF;;
+Register Table;11017;2B09;UINT16;1;1;BATTERY STATUS;;R;0: Min Battery Level 5: Max Battery Level;1;0x00FF;;
+Register Table;11018;2B0A;UINT16;1;1;Role 1 Properties;;R;0: Auto 1: Manuel OFF 2: Manuel ON;1;0x00FF;;
+Register Table;11019;2B0B;UINT16;1;1;Role 2 Properties;;R;0: Auto 1: Manuel OFF 2: Manuel ON;1;0x00FF;;
+Register Table;11020;2B0C;UINT16;1;1;Role 3 Properties;;R;0: Auto 1: Manuel OFF 2: Manuel ON;1;0x00FF;;
+Register Table;11021;2B0D;UINT16;1;1;Role 4 Properties;;R;0: Auto 1: Manuel OFF 2: Manuel ON;1;0x00FF;;
+Register Table;11022;2B0E;UINT16;1;1;Role 5 Properties;;R;0: Auto 1: Manuel OFF 2: Manuel ON;1;0x00FF;;
+Register Table;11023;2B0F;UINT16;1;1;Role 6 Properties;;R;0: Auto 1: Manuel OFF 2: Manuel ON;1;0x00FF;;
+Register Table;11024;2B10;UINT16;1;1;Role 7 Properties;;R;0: Auto 1: Manuel OFF 2: Manuel ON;1;0x00FF;;
+Register Table;11025;2B11;UINT16;1;1;Role 8 Properties;;R;0: Auto 1: Manuel OFF 2: Manuel ON;1;0x00FF;;
+Register Table;11026;2B12;UINT16;1;1;OUTPUT STATUS;Bit;R;Bit 0: 1. Relay Outputs Bit 1: 2. Relay Outputs Bit 2: 3. Relay Outputs Bit 3: 4. Relay Outputs Bit 4: 5. Relay Outputs Bit 5: 6. Relay Outputs Bit 6: 7. Relay Outputs Bit 7: 8. Relay Outputs 0: Relay ON 1: Relay OFF;1;0x00FF;;
+Register Table;11027;2B13;UINT16;1;2;RELAY 1 HIGH ON-OFF COUNT;-;R;RELAY 1 HIGH ON-OFF COUNT;1;0x00FF;;
+Register Table;11028;2B14;UINT16;1;2;RELAY 1 LOW ON-OFF COUNT;-;R;RELAY 1 LOW ON-OFF COUNT;1;0x00FF;;
+Register Table;11029;2B15;UINT16;1;2;RELAY 1 HIGH RUNTIME;Hour;R;RELAY 1 HIGH RUNTIME;1;0x00FF;;
+Register Table;11030;2B16;UINT16;1;2;RELAY 1 LOW RUNTIME;Hour;R;RELAY 1 LOW RUNTIME;1;0x00FF;;
+Register Table;11031;2B17;UINT16;1;2;RELAY 2 HIGH ON-OFF COUNT;-;R;RELAY 2 HIGH ON-OFF COUNT;1;0x00FF;;
+Register Table;11032;2B18;UINT16;1;2;RELAY2 LOW ON-OFF COUNT;-;R;RELAY2 LOW ON-OFF COUNT;1;0x00FF;;
+Register Table;11033;2B19;UINT16;1;2;RELAY 2 HIGH RUNTIME;Hour;R;RELAY 2 HIGH RUNTIME;1;0x00FF;;
+Register Table;11034;2B1A;UINT16;1;2;RELAY 2 LOW RUNTIME;Hour;R;RELAY 2 LOW RUNTIME;1;0x00FF;;
+Register Table;11035;2B1B;UINT16;1;2;RELAY 3 HIGH ON-OFF COUNT;-;R;RELAY 3 HIGH ON-OFF COUNT;1;0x00FF;;
+Register Table;11036;2B1C;UINT16;1;2;RELAY 3 LOW ON-OFF COUNT;-;R;RELAY 3 LOW ON-OFF COUNT;1;0x00FF;;
+Register Table;11037;2B1D;UINT16;1;2;RELAY 3 HIGH RUNTIME;Hour;R;RELAY 3 HIGH RUNTIME;1;0x00FF;;
+Register Table;11038;2B1E;UINT16;1;2;RELAY 3 LOW RUNTIME;Hour;R;RELAY 3 LOW RUNTIME;1;0x00FF;;
+Register Table;11039;2B1F;UINT16;1;2;RELAY 4 HIGH ON-OFF COUNT;-;R;RELAY 4 HIGH ON-OFF COUNT;1;0x00FF;;
+Register Table;11040;2B20;UINT16;1;2;RELAY 4 LOW ON-OFF COUNT;-;R;RELAY 4 LOW ON-OFF COUNT;1;0x00FF;;
+Register Table;11041;2B21;UINT16;1;2;RELAY 4 HIGH RUNTIME;Hour;R;RELAY 4 HIGH RUNTIME;1;0x00FF;;
+Register Table;11042;2B22;UINT16;1;2;RELAY 4 LOW RUNTIME;Hour;R;RELAY 4 LOW RUNTIME;1;0x00FF;;
+Register Table;11043;2B23;UINT16;1;2;RELAY 5 HIGH ON-OFF COUNT;-;R;RELAY 5 HIGH ON-OFF COUNT;1;0x00FF;;
+Register Table;11044;2B24;UINT16;1;2;RELAY 5 LOW ON-OFF COUNT;-;R;RELAY 5 LOW ON-OFF COUNT;1;0x00FF;;
+Register Table;11045;2B25;UINT16;1;2;RELAY 5 HIGH RUNTIME;Hour;R;RELAY 5 HIGH RUNTIME;1;0x00FF;;
+Register Table;11046;2B26;UINT16;1;2;RELAY 5 LOW RUNTIME;Hour;R;RELAY 5 LOW RUNTIME;1;0x00FF;;
+Register Table;11047;2B27;UINT16;1;2;RELAY 6 HIGH ON-OFF COUNT;-;R;RELAY 6 HIGH ON-OFF COUNT;1;0x00FF;;
+Register Table;11048;2B28;UINT16;1;2;RELAY 6 LOW ON-OFF COUNT;-;R;RELAY 6 LOW ON-OFF COUNT;1;0x00FF;;
+Register Table;11049;2B29;UINT16;1;2;RELAY 6 HIGH RUNTIME;Hour;R;RELAY 6 HIGH RUNTIME;1;0x00FF;;
+Register Table;11050;2B2A;UINT16;1;2;RELAY 6 LOW RUNTIME;Hour;R;RELAY 6 LOW RUNTIME;1;0x00FF;;
+Register Table;11051;2B2B;UINT16;1;2;RELAY 7 HIGH ON-OFF COUNT;-;R;RELAY 7 HIGH ON-OFF COUNT;1;0x00FF;;
+Register Table;11052;2B2C;UINT16;1;2;RELAY 7 LOW ON-OFF COUNT;-;R;RELAY 7 LOW ON-OFF COUNT;1;0x00FF;;
+Register Table;11053;2B2D;UINT16;1;2;RELAY 7 HIGH RUNTIME;Hour;R;RELAY 7 HIGH RUNTIME;1;0x00FF;;
+Register Table;11054;2B2E;UINT16;1;2;RELAY 7 LOW RUNTIME;Hour;R;RELAY 7 LOW RUNTIME;1;0x00FF;;
+Register Table;11055;2B2F;UINT16;1;2;RELAY 8 HIGH ON-OFF COUNT;-;R;RELAY 8 HIGH ON-OFF COUNT;1;0x00FF;;
+Register Table;11056;2B30;UINT16;1;2;RELAY 8 LOW ON-OFF COUNT;-;R;RELAY 8 LOW ON-OFF COUNT;1;0x00FF;;
+Register Table;11057;2B31;UINT16;1;2;RELAY 8 HIGH RUNTIME;Hour;R;RELAY 8 HIGH RUNTIME;1;0x00FF;;
+Register Table;11058;2B32;UINT16;1;2;RELAY 8 LOW RUNTIME;Hour;R;RELAY 8 LOW RUNTIME;1;0x00FF;;
+Device Identification;60416;EC00;UINT16;1;2;Device ID H;-;R;Device ID;1;0x00FF;;
+Device Identification;60417;EC01;UINT16;1;2;Device ID L;-;R;Device ID;1;0x00FF;;
+Device Identification;60418;EC02;UINT16;1;2;Device ID && Versiyon No;-;R;Device ID && Versiyon No;1;0x00FF;;
+Device Identification;60419;EC03;UINT16;1;2;Serial Number H;-;R;Serial Number High;1;0x00FF;;
+Device Identification;60420;EC04;UINT16;1;2;Serial Number L;-;R;Serial Number Low;1;0x00FF;;
+Device Identification;60421;EC05;UINT16;1;2;Software Version H;-;R;Software Version High;1;0x00FF;;
+Device Identification;60422;EC06;UINT16;1;2;Software Version L;-;R;Software Version Low;1;0x00FF;;
+Device Identification;60423;EC07;UINT16;1;2;Hardware Version H;-;R;Hardware Version High;1;0x00FF;;
+Device Identification;60424;EC08;UINT16;1;2;Hardware Version L;-;R;Hardware Version Low;1;0x00FF;;
+Device Identification;60425;EC09;UINT16;1;2;Modbus Table Version H;-;R;Modbus Table Version High;1;0x00FF;;
+Device Identification;60426;EC0A;UINT16;1;2;Modbus Table Version L;-;R;Modbus Table Version Low;1;0x00FF;;
+Device Identification;60427;EC0B;UINT16;1;2;Boot loader version H;-;R;Boot loader version High;1;0x00FF;;
+Device Identification;60428;EC0C;UINT16;1;2;Boot loader version L;-;R;Boot loader version Low;1;0x00FF;;
+Device Identification;60429;EC0D;UINT16;1;2;Fabrication Date H;Unix Time;R;Fabrication Date High;1;0x00FF;;
+Device Identification;60430;EC0E;UINT16;1;2;Fabrication Date L;Unix Time;R;Fabrication Date Low;1;0x00FF;;
+Device Identification;60431;EC0F;UINT16;1;2;Calibration Date H;Unix Time;R;Calibration Date High;1;0x00FF;;
+Device Identification;60432;EC10;UINT16;1;2;Calibration Date L;Unix Time;R;Calibration Date Low;1;0x00FF;;
+Date and Time Settings;6000;1770;UINT16;1;2;DAY;DAY;R/W;1-31;1;0x00FF;1;31
+Date and Time Settings;6001;1771;UINT16;1;2;MONTH;MONTH;R/W;1-12;1;0x00FF;1;12
+Date and Time Settings;6002;1772;UINT16;1;2;YEAR;YEAR;R/W;2000-2199;1;0x00FF;2000;2199
+Date and Time Settings;6003;1773;UINT16;1;2;HOUR;HOUR;R/W;0-23;1;0x00FF;0;23
+Date and Time Settings;6004;1774;UINT16;1;2;MINUTES;MINUTE;R/W;0-59;1;0x00FF;0;59
+Date and Time Settings;6005;1775;UINT16;1;2;SECOND;SECOND;R/W;0-59;1;0x00FF;0;59
+Date and Time Settings;6006;1776;UINT16;1;2;DAY OF THE WEEK;DAY;R;1 : Monday 2: Tuesday 3: Wednesday 4: Thursday 5: Friday 6: Saturday 7: Sunday [Tablo: Min=1 Max=0];1;0x00FF;;
+Date and Time Settings;6007;1777;UINT16;1;1;TIME ZONE;HOUR;R/W;±24;1/2;0x00FF;-24;24
+Date and Time Settings;6008;1778;UINT16;1;1;DST Mode;-;R/W;0: Disable 1: Europe 2: USA 3: Manual;1;0x00FF;0;3
+Date and Time Settings;6009;1779;UINT16;1;1;DST START MONTH;MONTH;R/W;1-12;1;0x00FF;1;12
+Date and Time Settings;6010;177A;UINT16;1;1;DST START WEEK;WEEK;R/W;0: First 1: Second 2: Third 3: Fourth 4: Last;1;0x00FF;0;4
+Date and Time Settings;6011;177B;UINT16;1;1;DST START DAY;DAY;R/W;DST Start Day: 1 : Sunday 2: Mondy 3: Tuesday 4: Wednesday 5: Thursday 6: Friday 7: Saturday;1;0x00FF;1;7
+Date and Time Settings;6012;177C;UINT16;1;1;DST START HOUR;HOUR;R/W;0-23;1;0x00FF;0;23
+Date and Time Settings;6013;177D;UINT16;1;1;DST END MONTH;MONTH;R/W;1-12;1;0x00FF;1;12
+Date and Time Settings;6014;177E;UINT16;1;1;DST END WEEK;WEEK;R/W;0: First 1: Second 2: Third 3: Fourth 4: Last;1;0x00FF;0;4
+Date and Time Settings;6015;177F;UINT16;1;1;DST END DAY;DAY;R/W;1 : Sunday 2: Monday 3: Tuesday 4: Wednesday 5: Thursday 6: Friday 7: Saturday;1;0x00FF;1;7
+Date and Time Settings;6016;1780;UINT16;1;1;DST END HOUR;HOUR;R/W;0-23;1;0x00FF;0;23
+Date and Time Settings;6017;1781;UINT16;1;1;DST STATUS;-;R;0: Winter 1: Summer [Tablo: Min=1 Max=0];1;0x00FF;;
+Date and Time Settings;6018;1782;UINT16;1;1;LocationCity;-;R/W;Please look at city list;1;0x00FF;0;0
+Date and Time Settings;6019;1783;UINT16;1;2;Latitude;Degree;R;Example : 41.0305156 |41.0305156|*256 = 10505;1/256;0x00FF;;
+Date and Time Settings;6020;1784;UINT16;1;1;Hemishpere;-;R/W;E : 0 W : 1;1;0x00FF;0;1
+Date and Time Settings;6021;1785;UINT16;1;2;Longitude;Degree;R;Example : 28.964844 |28.964844|*256 = 7415;1/256;0x00FF;;
+Date and Time Settings;6022;1786;UINT16;1;1;Pole;-;R/W;N : 0 S : 1;1;0x00FF;0;1
+Settings;17124;42E4;UINT16;1;1;MODBUS ADDRESS;-;R/W;Adjustable 1 - 247;1;0x00FF;1;247
+Settings;17125;42E5;UINT16;1;1;MODBUS BAUD;bps;R/W;0: 4800 1: 9600 2: 19200;1;0x00FF;0;2
+Settings;17126;42E6;UINT16;1;1;MODBUS PARITY;bit;R/W;0 : None 1: Odd 2: Even;1;0x00FF;0;2
+Settings;17127;42E7;UINT16;1;1;PASS ACT;-;R/W;0: Passive 1: Active;1;0x00FF;0;1
+Settings;17128;42E8;UINT16;1;2;PASSWORD;-;R/W;0-9999;1;0x00FF;0;9999
+Settings;17129;42E9;UINT16;1;1;CONTRAST;-;R/W;Adjustable 0 - 15;1;0x00FF;0;15
+Settings;17130;-;UINT16;1;-;-;-;-;-;-;-;;
+Settings;17131;42EB;UINT16;1;1;LANGUAGE;-;R/W;0: English 1: Turkish 2: German;1;0x00FF;0;1
+Settings;17132;42EC;UINT16;1;1;ManuelMod;-;R/W;0: Disable 1:Next Program 2:Timer;1;0x00FF;0;2
+Settings;17133;42ED;UINT16;1;1;ManuelModeHour;-;R/W;00-23;1;0x00FF;0;23
+Settings;17134;42EE;UINT16;1;1;ManuelModeMunite;-;R/W;00-59;1;0x00FF;0;59
+Settings;17135;42EF;UINT16;1;1;RELAY1 ON-OFF COUNT DEL;-;R/W;RELAY1 ON-OFF COUNT DEL 0 : NO OPERATION 1 : DELETE;1;0x00FF;0;1
+Settings;17136;42F0;UINT16;1;1;RELAY1 RUNTIME DEL;saat;R/W;RELAY1 RUNTIME DEL 0 : NO OPERATION 1 : DELETE;1;0x00FF;0;1
+Settings;17137;42F1;UINT16;1;1;RELAY2 ON-OFF COUNT DEL;-;R/W;RELAY2 ON-OFF COUNT DEL 0 : NO OPERATION 1 : DELETE;1;0x00FF;0;1
+Settings;17138;42F2;UINT16;1;1;RELAY2 RUNTIME DEL;saat;R/W;RELAY2 RUNTIME DEL 0 : NO OPERATION 1 : DELETE;1;0x00FF;0;1
+Settings;17139;42F3;UINT16;1;1;RELAY3 ON-OFF COUNT DEL;-;R;RELAY3 ON-OFF COUNT DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17140;42F4;UINT16;1;1;RELAY3 RUNTIME DEL;saat;R;RELAY3 RUNTIME DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17141;42F5;UINT16;1;1;RELAY4 ON-OFF COUNT DEL;-;R;RELAY4 ON-OFF COUNT DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17142;42F6;UINT16;1;1;RELAY4 RUNTIME DEL;saat;R;RELAY4 RUNTIME DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17143;42F7;UINT16;1;1;RELAY5 ON-OFF COUNT DEL;-;R;RELAY5 ON-OFF COUNT DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17144;42F8;UINT16;1;1;RELAY5 RUNTIME DEL;saat;R;RELAY5 RUNTIME DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17145;42F9;UINT16;1;1;RELAY6 ON-OFF COUNT DEL;-;R;RELAY6 ON-OFF COUNT DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17146;42FA;UINT16;1;1;RELAY6 RUNTIME DEL;saat;R;RELAY6 RUNTIME DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17147;42FB;UINT16;1;1;RELAY7 ON-OFF COUNT DEL;-;R;RELAY7 ON-OFF COUNT DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17148;42FC;UINT16;1;1;RELAY7 RUNTIME DEL;saat;R;RELAY7 RUNTIME DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17149;42FD;UINT16;1;1;RELAY8 ON-OFF COUNT DEL;-;R;RELAY8 ON-OFF COUNT DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Settings;17150;42FE;UINT16;1;1;RELAY8 RUNTIME DEL;saat;R;RELAY8 RUNTIME DEL [Tablo: Min=1 Max=0];1;0x00FF;;
+Relay Settings;8000;1F40;UINT16;1;1;Role 1 Properties;;R/W;0: Auto 1: Manuel ON 2: Manuel OFF;1;0x00FF;0;2
+Relay Settings;8001;1F41;UINT16;1;1;Role 2 Properties;;R/W;0: Auto 1: Manuel ON 2: Manuel OFF;1;0x00FF;0;2
+Relay Settings;8002;1F42;UINT16;1;1;Role 3 Properties;;R;[Tablo: Min=1 Max=0];1;0x00FF;;
+Relay Settings;8003;1F43;UINT16;1;1;Role 4 Properties;;R;[Tablo: Min=1 Max=0];1;0x00FF;;
+Relay Settings;8004;1F44;UINT16;1;1;Role 5 Properties;;R;[Tablo: Min=1 Max=0];1;0x00FF;;
+Relay Settings;8005;1F45;UINT16;1;1;Role 6 Properties;;R;[Tablo: Min=1 Max=0];1;0x00FF;;
+Relay Settings;8006;1F46;UINT16;1;1;Role 7 Properties;;R;[Tablo: Min=1 Max=0];1;0x00FF;;
+Relay Settings;8007;1F47;UINT16;1;1;Role 8 Properties;;R;[Tablo: Min=1 Max=0];1;0x00FF;;
+Relay Settings;8008;1F48;UINT16;1;1;OUTPUT STATUS;bit;R;Bit 0: 1. relay Outputs Bit 1: 2. relay Outputs Bit 2: 3. relay Outputs Bit 3: 4. relay Outputs Bit 4: 5. relay Outputs Bit 5: 6. relay Outputs Bit 6: 7. relay Outputs Bit 7: 8. relay Outputs 0: relay ON 1: relay OFF [Tablo: Min=1 Max=0];1;0x00FF;;
+Relay Settings;8009;1F49;UINT16;1;2;RELAY 1 HIGH ON-OFF COUNT;-;R/W;RELAY 1 HIGH ON-OFF COUNT;1;0x00FF;0;0
+Relay Settings;8010;1F4A;UINT16;1;2;RELAY 1 LOW ON-OFF COUNT;-;R/W;RELAY 1 LOW ON-OFF COUNT;1;0x00FF;0;0
+Relay Settings;8011;1F4B;UINT16;1;2;RELAY 1 HIGH RUNTIME;Hour;R/W;RELAY 1 HIGH RUNTIME;1;0x00FF;0;0
+Relay Settings;8012;1F4C;UINT16;1;2;RELAY 1 LOW RUNTIME;Hour;R/W;RELAY 1 LOW RUNTIME;1;0x00FF;0;0
+Relay Settings;8013;1F4D;UINT16;1;2;RELAY 2 HIGH ON-OFF COUNT;-;R/W;RELAY 2 HIGH ON-OFF COUNT;1;0x00FF;0;0
+Relay Settings;8014;1F4E;UINT16;1;2;RELAY2 LOW ON-OFF COUNT;-;R/W;RELAY2 LOW ON-OFF COUNT;1;0x00FF;0;0
+Relay Settings;8015;1F4F;UINT16;1;2;RELAY 2 HIGH RUNTIME;Hour;R/W;RELAY 2 HIGH RUNTIME;1;0x00FF;0;0
+Relay Settings;8016;1F50;UINT16;1;2;RELAY 2 LOW RUNTIME;Hour;R/W;RELAY 2 LOW RUNTIME;1;0x00FF;0;0
+Relay Settings;8017;1F51;UINT16;1;2;RELAY 3 HIGH ON-OFF COUNT;-;R;RELAY 3 HIGH ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8018;1F52;UINT16;1;2;RELAY 3 LOW ON-OFF COUNT;-;R;RELAY 3 LOW ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8019;1F53;UINT16;1;2;RELAY 3 HIGH RUNTIME;Hour;R;RELAY 3 HIGH RUNTIME;1;0x00FF;;
+Relay Settings;8020;1F54;UINT16;1;2;RELAY 3 LOW RUNTIME;Hour;R;RELAY 3 LOW RUNTIME;1;0x00FF;;
+Relay Settings;8021;1F55;UINT16;1;2;RELAY 4 HIGH ON-OFF COUNT;-;R;RELAY 4 HIGH ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8022;1F56;UINT16;1;2;RELAY 4 LOW ON-OFF COUNT;-;R;RELAY 4 LOW ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8023;1F57;UINT16;1;2;RELAY 4 HIGH RUNTIME;Hour;R;RELAY 4 HIGH RUNTIME;1;0x00FF;;
+Relay Settings;8024;1F58;UINT16;1;2;RELAY 4 LOW RUNTIME;Hour;R;RELAY 4 LOW RUNTIME;1;0x00FF;;
+Relay Settings;8025;1F59;UINT16;1;2;RELAY 5 HIGH ON-OFF COUNT;-;R;RELAY 5 HIGH ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8026;1F5A;UINT16;1;2;RELAY 5 LOW ON-OFF COUNT;-;R;RELAY 5 LOW ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8027;1F5B;UINT16;1;2;RELAY 5 HIGH RUNTIME;Hour;R;RELAY 5 HIGH RUNTIME;1;0x00FF;;
+Relay Settings;8028;1F5C;UINT16;1;2;RELAY 5 LOW RUNTIME;Hour;R;RELAY 5 LOW RUNTIME;1;0x00FF;;
+Relay Settings;8029;1F5D;UINT16;1;2;RELAY 6 HIGH ON-OFF COUNT;-;R;RELAY 6 HIGH ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8030;1F5E;UINT16;1;2;RELAY 6 LOW ON-OFF COUNT;-;R;RELAY 6 LOW ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8031;1F5F;UINT16;1;2;RELAY 6 HIGH RUNTIME;Hour;R;RELAY 6 HIGH RUNTIME;1;0x00FF;;
+Relay Settings;8032;1F60;UINT16;1;2;RELAY 6 LOW RUNTIME;Hour;R;RELAY 6 LOW RUNTIME;1;0x00FF;;
+Relay Settings;8033;1F61;UINT16;1;2;RELAY 7 HIGH ON-OFF COUNT;-;R;RELAY 7 HIGH ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8034;1F62;UINT16;1;2;RELAY 7 LOW ON-OFF COUNT;-;R;RELAY 7 LOW ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8035;1F63;UINT16;1;2;RELAY 7 HIGH RUNTIME;Hour;R;RELAY 7 HIGH RUNTIME;1;0x00FF;;
+Relay Settings;8036;1F64;UINT16;1;2;RELAY 7 LOW RUNTIME;Hour;R;RELAY 7 LOW RUNTIME;1;0x00FF;;
+Relay Settings;8037;1F65;UINT16;1;2;RELAY 8 HIGH ON-OFF COUNT;-;R;RELAY 8 HIGH ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8038;1F66;UINT16;1;2;RELAY 8 LOW ON-OFF COUNT;-;R;RELAY 8 LOW ON-OFF COUNT;1;0x00FF;;
+Relay Settings;8039;1F67;UINT16;1;2;RELAY 8 HIGH RUNTIME;Hour;R;RELAY 8 HIGH RUNTIME;1;0x00FF;;
+Relay Settings;8040;1F68;UINT16;1;2;RELAY 8 LOW RUNTIME;Hour;R;RELAY 8 LOW RUNTIME;1;0x00FF;;
+Programs;7000;1B58;UINT16;1;1;Program 1 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7001;1B59;UINT16;1;1;Program 1 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7002;1B5A;UINT16;1;1;Program 1 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7003;1B5B;UINT16;1;1;Program 1 OnSign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7004;1B5C;UINT16;1;1;Program 1 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7005;1B5D;UINT16;1;1;Program 1 OnMinute;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7006;1B5E;UINT16;1;1;Program 1 OnSecond;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7007;1B5F;UINT16;1;1;Program 1 OnDays;-;R/W;0. bit: Monday 1. bit: Tuesday 2. bit: Wednesday 3. bit: Thursday 4. bit: Friday 5. bit: Saturday 6. bit : Sunday;1;0x00FF;0;127
+Programs;7008;1B60;UINT16;1;1;Program 1 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7009;1B61;UINT16;1;1;Program 1 Off Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7010;1B62;UINT16;1;1;Program 1 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7011;1B63;UINT16;1;1;Program 1 OffMinute;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7012;1B64;UINT16;1;1;Program 1 OffSecond;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7013;1B65;UINT16;1;1;Program 2 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7014;1B66;UINT16;1;1;Program 2 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7015;1B67;UINT16;1;1;Program 2 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7016;1B68;UINT16;1;1;Program 2 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7017;1B69;UINT16;1;1;Program 2 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7018;1B6A;UINT16;1;1;Program 2 OnMinute;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7019;1B6B;UINT16;1;1;Program 2 OnSecond;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7020;1B6C;UINT16;1;1;Program 2 OnDays;-;R/W;0. bit: Monday 1. bit: Tuesday 2. bit: Wednesday 3. bit: Thursday 4. bit: Friday 5. bit: Saturday 6. bit : Sunday;1;0x00FF;0;127
+Programs;7021;1B6D;UINT16;1;1;Program 2 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7022;1B6E;UINT16;1;1;Program 2 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7023;1B6F;UINT16;1;1;Program 2 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7024;1B70;UINT16;1;1;Program 2 OffMinute;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7025;1B71;UINT16;1;1;Program 2 OffSecond;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7026;1B72;UINT16;1;1;Program 3 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7027;1B73;UINT16;1;1;Program 3 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7028;1B74;UINT16;1;1;Program 3 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7029;1B75;UINT16;1;1;Program 3 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7030;1B76;UINT16;1;1;Program 3 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7031;1B77;UINT16;1;1;Program 3 OnMinute;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7032;1B78;UINT16;1;1;Program 3 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7033;1B79;UINT16;1;1;Program 3 OnDays;-;R/W;0. bit: Monday 1. bit: Tuesday 2. bit: Wednesday 3. bit: Thursday 4. bit: Friday 5. bit: Saturday 6. bit : Sunday;1;0x00FF;0;127
+Programs;7034;1B7A;UINT16;1;1;Program 3 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7035;1B7B;UINT16;1;1;Program 3 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7036;1B7C;UINT16;1;1;Program 3 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7037;1B7D;UINT16;1;1;Program 3 OffMinute;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7038;1B7E;UINT16;1;1;Program 3 OffSecond;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7039;1B7F;UINT16;1;1;Program 4 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7040;1B80;UINT16;1;1;Program 4 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7041;1B81;UINT16;1;1;Program 4 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7042;1B82;UINT16;1;1;Program 4 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7043;1B83;UINT16;1;1;Program 4 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7044;1B84;UINT16;1;1;Program 4 OnMinute;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7045;1B85;UINT16;1;1;Program 4 OnSecond;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7046;1B86;UINT16;1;1;Program 4 OnDays;-;R/W;0. bit: Monday 1. bit: Tuesday 2. bit: Wednesday 3. bit: Thursday 4. bit: Friday 5. bit: Saturday 6. bit : Sunday;1;0x00FF;0;127
+Programs;7047;1B87;UINT16;1;1;Program 4 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7048;1B88;UINT16;1;1;Program 4 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7049;1B89;UINT16;1;1;Program 4 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7050;1B8A;UINT16;1;1;Program 4 OffMinute;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7051;1B8B;UINT16;1;1;Program 4 OffSecond;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7052;1B8C;UINT16;1;1;Program 5 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7053;1B8D;UINT16;1;1;Program 5 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7054;1B8E;UINT16;1;1;Program 5 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7055;1B8F;UINT16;1;1;Program 5 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7056;1B90;UINT16;1;1;Program 5 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7057;1B91;UINT16;1;1;Program 5 OnMinute;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7058;1B92;UINT16;1;1;Program 5 OnSecond;-;R/W;Adjustable 0-59;1;0x00FF;0;59
+Programs;7059;1B93;UINT16;1;1;Program 5 OnDays;-;R/W;0. bit: Monday 1. bit: Tuesday 2. bit: Wednesday 3. bit: Thursday 4. bit: Friday 5. bit: Saturday 6. bit : Sunday;1;0x00FF;0;127
+Programs;7060;1B94;UINT16;1;1;Program 5 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7061;1B95;UINT16;1;1;Program 5 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7062;1B96;UINT16;1;1;Program 5 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7063;1B97;UINT16;1;1;Program 5 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7064;1B98;UINT16;1;1;Program 5 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7065;1B99;UINT16;1;1;Program 6 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7066;1B9A;UINT16;1;1;Program 6 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7067;1B9B;UINT16;1;1;Program 6 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7068;1B9C;UINT16;1;1;Program 6 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7069;1B9D;UINT16;1;1;Program 6 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7070;1B9E;UINT16;1;1;Program 6 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7071;1B9F;UINT16;1;1;Program 6 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7072;1BA0;UINT16;1;1;Program 6 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7073;1BA1;UINT16;1;1;Program 6 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7074;1BA2;UINT16;1;1;Program 6 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7075;1BA3;UINT16;1;1;Program 6 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7076;1BA4;UINT16;1;1;Program 6 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7077;1BA5;UINT16;1;1;Program 6 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7078;1BA6;UINT16;1;1;Program 7 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7079;1BA7;UINT16;1;1;Program 7 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7080;1BA8;UINT16;1;1;Program 7 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7081;1BA9;UINT16;1;1;Program 7 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7082;1BAA;UINT16;1;1;Program 7 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7083;1BAB;UINT16;1;1;Program 7 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7084;1BAC;UINT16;1;1;Program 7 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7085;1BAD;UINT16;1;1;Program 7 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7086;1BAE;UINT16;1;1;Program 7 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7087;1BAF;UINT16;1;1;Program 7 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7088;1BB0;UINT16;1;1;Program 7 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7089;1BB1;UINT16;1;1;Program 7 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7090;1BB2;UINT16;1;1;Program 7 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7091;1BB3;UINT16;1;1;Program 8 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7092;1BB4;UINT16;1;1;Program 8 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7093;1BB5;UINT16;1;1;Program 8 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7094;1BB6;UINT16;1;1;Program 8 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7095;1BB7;UINT16;1;1;Program 8 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7096;1BB8;UINT16;1;1;Program 8 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7097;1BB9;UINT16;1;1;Program 8 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7098;1BBA;UINT16;1;1;Program 8 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7099;1BBB;UINT16;1;1;Program 8 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7100;1BBC;UINT16;1;1;Program 8 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7101;1BBD;UINT16;1;1;Program 8 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7102;1BBE;UINT16;1;1;Program 8 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7103;1BBF;UINT16;1;1;Program 8 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7104;1BC0;UINT16;1;1;Program 9 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7105;1BC1;UINT16;1;1;Program 9 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7106;1BC2;UINT16;1;1;Program 9 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7107;1BC3;UINT16;1;1;Program 9 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7108;1BC4;UINT16;1;1;Program 9 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7109;1BC5;UINT16;1;1;Program 9 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7110;1BC6;UINT16;1;1;Program 9 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7111;1BC7;UINT16;1;1;Program 9 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7112;1BC8;UINT16;1;1;Program 9 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7113;1BC9;UINT16;1;1;Program 9 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7114;1BCA;UINT16;1;1;Program 9 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7115;1BCB;UINT16;1;1;Program 9 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7116;1BCC;UINT16;1;1;Program 9 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7117;1BCD;UINT16;1;1;Program 10 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7118;1BCE;UINT16;1;1;Program 10 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7119;1BCF;UINT16;1;1;Program 10 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7120;1BD0;UINT16;1;1;Program 10 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7121;1BD1;UINT16;1;1;Program 10 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7122;1BD2;UINT16;1;1;Program 10 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7123;1BD3;UINT16;1;1;Program 10 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7124;1BD4;UINT16;1;1;Program 10 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7125;1BD5;UINT16;1;1;Program 10 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7126;1BD6;UINT16;1;1;Program 10 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7127;1BD7;UINT16;1;1;Program 10 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7128;1BD8;UINT16;1;1;Program 10 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7129;1BD9;UINT16;1;1;Program 10 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7130;1BDA;UINT16;1;1;Program 11 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7131;1BDB;UINT16;1;1;Program 11 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7132;1BDC;UINT16;1;1;Program 11 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7133;1BDD;UINT16;1;1;Program 11 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7134;1BDE;UINT16;1;1;Program 11 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7135;1BDF;UINT16;1;1;Program 11 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7136;1BE0;UINT16;1;1;Program 11 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7137;1BE1;UINT16;1;1;Program 11 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7138;1BE2;UINT16;1;1;Program 11 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7139;1BE3;UINT16;1;1;Program 11 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7140;1BE4;UINT16;1;1;Program 11 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7141;1BE5;UINT16;1;1;Program 11 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7142;1BE6;UINT16;1;1;Program 11 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7143;1BE7;UINT16;1;1;Program 12 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7144;1BE8;UINT16;1;1;Program 12 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7145;1BE9;UINT16;1;1;Program 12 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7146;1BEA;UINT16;1;1;Program 12 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7147;1BEB;UINT16;1;1;Program 12 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7148;1BEC;UINT16;1;1;Program 12 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7149;1BED;UINT16;1;1;Program 12 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7150;1BEE;UINT16;1;1;Program 12 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7151;1BEF;UINT16;1;1;Program 12 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7152;1BF0;UINT16;1;1;Program 12 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7153;1BF1;UINT16;1;1;Program 12 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7154;1BF2;UINT16;1;1;Program 12 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7155;1BF3;UINT16;1;1;Program 12 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7156;1BF4;UINT16;1;1;Program 13 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7157;1BF5;UINT16;1;1;Program 13 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7158;1BF6;UINT16;1;1;Program 13 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7159;1BF7;UINT16;1;1;Program 13 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7160;1BF8;UINT16;1;1;Program 13 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7161;1BF9;UINT16;1;1;Program 13 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7162;1BFA;UINT16;1;1;Program 13 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7163;1BFB;UINT16;1;1;Program 13 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7164;1BFC;UINT16;1;1;Program 13 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7165;1BFD;UINT16;1;1;Program 13 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7166;1BFE;UINT16;1;1;Program 13 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7167;1BFF;UINT16;1;1;Program 13 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7168;1C00;UINT16;1;1;Program 13 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7169;1C01;UINT16;1;1;Program 14 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7170;1C02;UINT16;1;1;Program 14 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7171;1C03;UINT16;1;1;Program 14 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7172;1C04;UINT16;1;1;Program 14 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7173;1C05;UINT16;1;1;Program 14 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7174;1C06;UINT16;1;1;Program 14 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7175;1C07;UINT16;1;1;Program 14 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7176;1C08;UINT16;1;1;Program 14 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7177;1C09;UINT16;1;1;Program 14 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7178;1C0A;UINT16;1;1;Program 14 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7179;1C0B;UINT16;1;1;Program 14 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7180;1C0C;UINT16;1;1;Program 14 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7181;1C0D;UINT16;1;1;Program 14 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7182;1C0E;UINT16;1;1;Program 15 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7183;1C0F;UINT16;1;1;Program 15 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7184;1C10;UINT16;1;1;Program 15 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7185;1C11;UINT16;1;1;Program 15 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7186;1C12;UINT16;1;1;Program 15 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7187;1C13;UINT16;1;1;Program 15 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7188;1C14;UINT16;1;1;Program 15 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7189;1C15;UINT16;1;1;Program 15 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7190;1C16;UINT16;1;1;Program 15 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7191;1C17;UINT16;1;1;Program 15 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7192;1C18;UINT16;1;1;Program 15 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7193;1C19;UINT16;1;1;Program 15 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7194;1C1A;UINT16;1;1;Program 15 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7195;1C1B;UINT16;1;1;Program 16 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7196;1C1C;UINT16;1;1;Program 16 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7197;1C1D;UINT16;1;1;Program 16 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7198;1C1E;UINT16;1;1;Program 16 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7199;1C1F;UINT16;1;1;Program 16 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7200;1C20;UINT16;1;1;Program 16 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7201;1C21;UINT16;1;1;Program 16 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7202;1C22;UINT16;1;1;Program 16 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7203;1C23;UINT16;1;1;Program 16 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7204;1C24;UINT16;1;1;Program 16 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7205;1C25;UINT16;1;1;Program 16 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7206;1C26;UINT16;1;1;Program 16 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7207;1C27;UINT16;1;1;Program 16 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7208;1C28;UINT16;1;1;Program 17 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7209;1C29;UINT16;1;1;Program 17 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7210;1C2A;UINT16;1;1;Program 17 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7211;1C2B;UINT16;1;1;Program 17 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7212;1C2C;UINT16;1;1;Program 17 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7213;1C2D;UINT16;1;1;Program 17 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7214;1C2E;UINT16;1;1;Program 17 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7215;1C2F;UINT16;1;1;Program 17 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7216;1C30;UINT16;1;1;Program 17 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7217;1C31;UINT16;1;1;Program 17 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7218;1C32;UINT16;1;1;Program 17 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7219;1C33;UINT16;1;1;Program 17 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7220;1C34;UINT16;1;1;Program 17 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7221;1C35;UINT16;1;1;Program 18 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7222;1C36;UINT16;1;1;Program 18 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7223;1C37;UINT16;1;1;Program 18 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7224;1C38;UINT16;1;1;Program 18 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7225;1C39;UINT16;1;1;Program 18 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7226;1C3A;UINT16;1;1;Program 18 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7227;1C3B;UINT16;1;1;Program 18 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7228;1C3C;UINT16;1;1;Program 18 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7229;1C3D;UINT16;1;1;Program 18 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7230;1C3E;UINT16;1;1;Program 18 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7231;1C3F;UINT16;1;1;Program 18 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7232;1C40;UINT16;1;1;Program 18 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7233;1C41;UINT16;1;1;Program 18 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7234;1C42;UINT16;1;1;Program 19 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7235;1C43;UINT16;1;1;Program 19 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7236;1C44;UINT16;1;1;Program 19 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7237;1C45;UINT16;1;1;Program 19 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7238;1C46;UINT16;1;1;Program 19 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7239;1C47;UINT16;1;1;Program 19 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7240;1C48;UINT16;1;1;Program 19 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7241;1C49;UINT16;1;1;Program 19 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7242;1C4A;UINT16;1;1;Program 19 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7243;1C4B;UINT16;1;1;Program 19 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7244;1C4C;UINT16;1;1;Program 19 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7245;1C4D;UINT16;1;1;Program 19 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7246;1C4E;UINT16;1;1;Program 19 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7247;1C4F;UINT16;1;1;Program 20 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7248;1C50;UINT16;1;1;Program 20 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7249;1C51;UINT16;1;1;Program 20 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7250;1C52;UINT16;1;1;Program 20 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7251;1C53;UINT16;1;1;Program 20 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7252;1C54;UINT16;1;1;Program 20 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7253;1C55;UINT16;1;1;Program 20 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7254;1C56;UINT16;1;1;Program 20 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7255;1C57;UINT16;1;1;Program 20 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7256;1C58;UINT16;1;1;Program 20 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7257;1C59;UINT16;1;1;Program 20 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7258;1C5A;UINT16;1;1;Program 20 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7259;1C5B;UINT16;1;1;Program 20 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7260;1C5C;UINT16;1;1;Program 21 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7261;1C5D;UINT16;1;1;Program 21 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7262;1C5E;UINT16;1;1;Program 21 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7263;1C5F;UINT16;1;1;Program 21 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7264;1C60;UINT16;1;1;Program 21 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7265;1C61;UINT16;1;1;Program 21 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7266;1C62;UINT16;1;1;Program 21 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7267;1C63;UINT16;1;1;Program 21 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7268;1C64;UINT16;1;1;Program 21 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7269;1C65;UINT16;1;1;Program 21 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7270;1C66;UINT16;1;1;Program 21 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7271;1C67;UINT16;1;1;Program 21 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7272;1C68;UINT16;1;1;Program 21 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7273;1C69;UINT16;1;1;Program 22 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7274;1C6A;UINT16;1;1;Program 22 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7275;1C6B;UINT16;1;1;Program 22 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7276;1C6C;UINT16;1;1;Program 22 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7277;1C6D;UINT16;1;1;Program 22 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7278;1C6E;UINT16;1;1;Program 22 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7279;1C6F;UINT16;1;1;Program 22 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7280;1C70;UINT16;1;1;Program 22 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7281;1C71;UINT16;1;1;Program 22 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7282;1C72;UINT16;1;1;Program 22 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7283;1C73;UINT16;1;1;Program 22 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7284;1C74;UINT16;1;1;Program 22 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7285;1C75;UINT16;1;1;Program 22 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7286;1C76;UINT16;1;1;Program 23 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7287;1C77;UINT16;1;1;Program 23 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7288;1C78;UINT16;1;1;Program 23 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7289;1C79;UINT16;1;1;Program 23 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7290;1C7A;UINT16;1;1;Program 23 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7291;1C7B;UINT16;1;1;Program 23 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7292;1C7C;UINT16;1;1;Program 23 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7293;1C7D;UINT16;1;1;Program 23 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7294;1C7E;UINT16;1;1;Program 23 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7295;1C7F;UINT16;1;1;Program 23 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7296;1C80;UINT16;1;1;Program 23 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7297;1C81;UINT16;1;1;Program 23 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7298;1C82;UINT16;1;1;Program 23 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7299;1C83;UINT16;1;1;Program 24 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7300;1C84;UINT16;1;1;Program 24 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7301;1C85;UINT16;1;1;Program 24 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7302;1C86;UINT16;1;1;Program 24 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7303;1C87;UINT16;1;1;Program 24 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7304;1C88;UINT16;1;1;Program 24 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7305;1C89;UINT16;1;1;Program 24 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7306;1C8A;UINT16;1;1;Program 24 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7307;1C8B;UINT16;1;1;Program 24 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7308;1C8C;UINT16;1;1;Program 24 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7309;1C8D;UINT16;1;1;Program 24 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7310;1C8E;UINT16;1;1;Program 24 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7311;1C8F;UINT16;1;1;Program 24 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7312;1C90;UINT16;1;1;Program 25 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7313;1C91;UINT16;1;1;Program 25 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7314;1C92;UINT16;1;1;Program 25 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7315;1C93;UINT16;1;1;Program 25 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7316;1C94;UINT16;1;1;Program 25 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7317;1C95;UINT16;1;1;Program 25 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7318;1C96;UINT16;1;1;Program 25 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7319;1C97;UINT16;1;1;Program 25 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7320;1C98;UINT16;1;1;Program 25 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7321;1C99;UINT16;1;1;Program 25 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7322;1C9A;UINT16;1;1;Program 25 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7323;1C9B;UINT16;1;1;Program 25 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7324;1C9C;UINT16;1;1;Program 25 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7325;1C9D;UINT16;1;1;Program 26 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7326;1C9E;UINT16;1;1;Program 26 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7327;1C9F;UINT16;1;1;Program 26 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7328;1CA0;UINT16;1;1;Program 26 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7329;1CA1;UINT16;1;1;Program 26 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7330;1CA2;UINT16;1;1;Program 26 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7331;1CA3;UINT16;1;1;Program 26 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7332;1CA4;UINT16;1;1;Program 26 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7333;1CA5;UINT16;1;1;Program 26 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7334;1CA6;UINT16;1;1;Program 26 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7335;1CA7;UINT16;1;1;Program 26 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7336;1CA8;UINT16;1;1;Program 26 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7337;1CA9;UINT16;1;1;Program 26 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7338;1CAA;UINT16;1;1;Program 27 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7339;1CAB;UINT16;1;1;Program 27 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7340;1CAC;UINT16;1;1;Program 27 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7341;1CAD;UINT16;1;1;Program 27 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7342;1CAE;UINT16;1;1;Program 27 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7343;1CAF;UINT16;1;1;Program 27 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7344;1CB0;UINT16;1;1;Program 27 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7345;1CB1;UINT16;1;1;Program 27 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7346;1CB2;UINT16;1;1;Program 27 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7347;1CB3;UINT16;1;1;Program 27 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7348;1CB4;UINT16;1;1;Program 27 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7349;1CB5;UINT16;1;1;Program 27 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7350;1CB6;UINT16;1;1;Program 27 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7351;1CB7;UINT16;1;1;Program 28 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7352;1CB8;UINT16;1;1;Program 28 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7353;1CB9;UINT16;1;1;Program 28 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7354;1CBA;UINT16;1;1;Program 28 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7355;1CBB;UINT16;1;1;Program 28 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7356;1CBC;UINT16;1;1;Program 28 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7357;1CBD;UINT16;1;1;Program 28 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7358;1CBE;UINT16;1;1;Program 28 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7359;1CBF;UINT16;1;1;Program 28 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7360;1CC0;UINT16;1;1;Program 28 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7361;1CC1;UINT16;1;1;Program 28 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7362;1CC2;UINT16;1;1;Program 28 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7363;1CC3;UINT16;1;1;Program 28 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7364;1CC4;UINT16;1;1;Program 29 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7365;1CC5;UINT16;1;1;Program 29 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7366;1CC6;UINT16;1;1;Program 29 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7367;1CC7;UINT16;1;1;Program 29 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7368;1CC8;UINT16;1;1;Program 29 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7369;1CC9;UINT16;1;1;Program 29 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7370;1CCA;UINT16;1;1;Program 29 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7371;1CCB;UINT16;1;1;Program 29 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7372;1CCC;UINT16;1;1;Program 29 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7373;1CCD;UINT16;1;1;Program 29 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7374;1CCE;UINT16;1;1;Program 29 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7375;1CCF;UINT16;1;1;Program 29 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7376;1CD0;UINT16;1;1;Program 29 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7377;1CD1;UINT16;1;1;Program 30 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7378;1CD2;UINT16;1;1;Program 30 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7379;1CD3;UINT16;1;1;Program 30 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7380;1CD4;UINT16;1;1;Program 30 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7381;1CD5;UINT16;1;1;Program 30 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7382;1CD6;UINT16;1;1;Program 30 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7383;1CD7;UINT16;1;1;Program 30 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7384;1CD8;UINT16;1;1;Program 30 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7385;1CD9;UINT16;1;1;Program 30 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7386;1CDA;UINT16;1;1;Program 30 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7387;1CDB;UINT16;1;1;Program 30 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7388;1CDC;UINT16;1;1;Program 30 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7389;1CDD;UINT16;1;1;Program 30 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7390;1CDE;UINT16;1;1;Program 31 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7391;1CDF;UINT16;1;1;Program 31 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7392;1CE0;UINT16;1;1;Program 31 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7393;1CE1;UINT16;1;1;Program 31 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7394;1CE2;UINT16;1;1;Program 31 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7395;1CE3;UINT16;1;1;Program 31 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7396;1CE4;UINT16;1;1;Program 31 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7397;1CE5;UINT16;1;1;Program 31 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7398;1CE6;UINT16;1;1;Program 31 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7399;1CE7;UINT16;1;1;Program 31 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7400;1CE8;UINT16;1;1;Program 31 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7401;1CE9;UINT16;1;1;Program 31 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7402;1CEA;UINT16;1;1;Program 31 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7403;1CEB;UINT16;1;1;Program 32 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7404;1CEC;UINT16;1;1;Program 32 Output;-;R/W;0: C1 1: C2;1;0x00FF;0;1
+Programs;7405;1CED;UINT16;1;1;Program 32 OnMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7406;1CEE;UINT16;1;1;Program 32 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7407;1CEF;UINT16;1;1;Program 32 OnHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7408;1CF0;UINT16;1;1;Program 32 OnMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7409;1CF1;UINT16;1;1;Program 32 OnSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7410;1CF2;UINT16;1;1;Program 32 OnDays;-;R/W;0. bit: MONDAY 1. bit: TUESDAY 2. bit: WEDNESDAY 3. bit: THURDAY 4. bit: FRIDAY 5. bit: SATURDAY 6. bit : SUNDAY;1;0x00FF;0;127
+Programs;7411;1CF3;UINT16;1;1;Program 32 OffMode;-;R/W;0: Time 1: Sunrise 2: Sunset;1;0x00FF;0;2
+Programs;7412;1CF4;UINT16;1;1;Program 32 Sign;-;R/W;Mode 0 --> 0 Mode 1 or 2 --> 0: + , 1: -;1;0x00FF;0;1
+Programs;7413;1CF5;UINT16;1;1;Program 32 OffHour;-;R/W;Mode 0 --> adjustable 0-23 Mode1 or 2 --> 0-9;1;0x00FF;0;23
+Programs;7414;1CF6;UINT16;1;1;Program 32 OffMinute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7415;1CF7;UINT16;1;1;Program 32 OffSecond;-;R/W;0-59;1;0x00FF;0;59
+Programs;7416;1CF8;UINT16;1;1;Holiday 1 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7417;1CF9;UINT16;1;1;Holiday 1 Start Month;-;R/W;1-12;1;0x00FF;1;12
+Programs;7418;1CFA;UINT16;1;1;Holiday 1 Start Day;-;R/W;1-31;1;0x00FF;1;31
+Programs;7419;1CFB;UINT16;1;1;Holiday 1 Start Hour;-;R/W;0-23;1;0x00FF;0;23
+Programs;7420;1CFC;UINT16;1;1;Holiday 1 Start Minute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7421;1CFD;UINT16;1;1;Holiday 1 Stop Month;-;R/W;1-12;1;0x00FF;1;12
+Programs;7422;1CFE;UINT16;1;1;Holiday 1 Stop Day;-;R/W;1-31;1;0x00FF;1;31
+Programs;7423;1CFF;UINT16;1;1;Holiday 1 Stop Hour;-;R/W;0-23;1;0x00FF;0;23
+Programs;7424;1D00;UINT16;1;1;Holiday 1 Stop Minute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7425;1D01;UINT16;1;1;Holiday 2 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7426;1D02;UINT16;1;1;Holiday 2 Start Month;-;R/W;1-12;1;0x00FF;1;12
+Programs;7427;1D03;UINT16;1;1;Holiday 2 Start Day;-;R/W;1-31;1;0x00FF;1;31
+Programs;7428;1D04;UINT16;1;1;Holiday 2 Start Hour;-;R/W;0-23;1;0x00FF;0;23
+Programs;7429;1D05;UINT16;1;1;Holiday 2 Start Minute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7430;1D06;UINT16;1;1;Holiday 2 Stop Month;-;R/W;1-12;1;0x00FF;1;12
+Programs;7431;1D07;UINT16;1;1;Holiday 2 Stop Day;-;R/W;1-31;1;0x00FF;1;31
+Programs;7432;1D08;UINT16;1;1;Holiday 2 Stop Hour;-;R/W;0-23;1;0x00FF;0;23
+Programs;7433;1D09;UINT16;1;1;Holiday 2 Stop Minute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7434;1D0A;UINT16;1;1;Holiday 3 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7435;1D0B;UINT16;1;1;Holiday 3 Start Month;-;R/W;1-12;1;0x00FF;1;12
+Programs;7436;1D0C;UINT16;1;1;Holiday 3 Start Day;-;R/W;1-31;1;0x00FF;1;31
+Programs;7437;1D0D;UINT16;1;1;Holiday 3 Start Hour;-;R/W;0-23;1;0x00FF;0;23
+Programs;7438;1D0E;UINT16;1;1;Holiday 3 Start Minute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7439;1D0F;UINT16;1;1;Holiday 3 Stop Month;-;R/W;1-12;1;0x00FF;1;12
+Programs;7440;1D10;UINT16;1;1;Holiday 3 Stop Day;-;R/W;1-31;1;0x00FF;1;31
+Programs;7441;1D11;UINT16;1;1;Holiday 3 Stop Hour;-;R/W;0-23;1;0x00FF;0;23
+Programs;7442;1D12;UINT16;1;1;Holiday 3 Stop Minute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7443;1D13;UINT16;1;1;Holiday 4 Enable;-;R/W;0: Disable 1: Enable;1;0x00FF;0;1
+Programs;7444;1D14;UINT16;1;1;Holiday 4 Start Month;-;R/W;1-12;1;0x00FF;1;12
+Programs;7445;1D15;UINT16;1;1;Holiday 4 Start Day;-;R/W;1-31;1;0x00FF;1;31
+Programs;7446;1D16;UINT16;1;1;Holiday 4 Start Hour;-;R/W;0-23;1;0x00FF;0;23
+Programs;7447;1D17;UINT16;1;1;Holiday 4 Start Minute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7448;1D18;UINT16;1;1;Holiday 4 Stop Month;-;R/W;1-12;1;0x00FF;1;12
+Programs;7449;1D19;UINT16;1;1;Holiday 4 Stop Day;-;R/W;1-31;1;0x00FF;1;31
+Programs;7450;1D1A;UINT16;1;1;Holiday 4 Stop Hour;-;R/W;0-23;1;0x00FF;0;23
+Programs;7451;1D1B;UINT16;1;1;Holiday 4 Stop Minute;-;R/W;0-59;1;0x00FF;0;59
+Programs;7452;1D1C;UINT16;1;2;Combine 1 H;-;R/W;0. bit : 17. Program 1. bit : 18. Program 2. bit : 19. Program 3. bit : 20. Program 4. bit : 21. Program 5. bit : 22. Program 6. bit : 23. Program 7. bit : 24. Program 8. bit : 25. Program 9. bit : 26. Program 10. bit : 27. Program . . .;1;0x00FF;0;65535
+Programs;7453;1D1D;UINT16;1;2;Combine 1 L;-;R/W;0. bit : 1. Program 1. bit : 2. Program 2. bit : 3. Program 3. bit : 4. Program 4. bit : 5. Program 5. bit : 6. Program 6. bit : 7. Program 7. bit : 8. Program 8. bit : 9. Program 9. bit : 10. Program 10. bit : 11. Program . . .;2;0x00FF;0;65535
+Programs;7454;1D1E;UINT16;1;2;Combine 2 H;-;R/W;0. bit : 17. Program 1. bit : 18. Program 2. bit : 19. Program 3. bit : 20. Program 4. bit : 21. Program 5. bit : 22. Program 6. bit : 23. Program 7. bit : 24. Program 8. bit : 25. Program 9. bit : 26. Program 10. bit : 27. Program . . .;1;0x00FF;0;65535
+Programs;7455;1D1F;UINT16;1;2;Combine 2 L;-;R/W;0. bit : 1. Program 1. bit : 2. Program 2. bit : 3. Program 3. bit : 4. Program 4. bit : 5. Program 5. bit : 6. Program 6. bit : 7. Program 7. bit : 8. Program 8. bit : 9. Program 9. bit : 10. Program 10. bit : 11. Program . .;2;0x00FF;0;65535
