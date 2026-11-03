@@ -318,10 +318,10 @@ class App(tk.Tk):
         fa = ttk.Frame(g)
         fa.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(6, 0))
         ttk.Label(fa, text="Fonksiyon testi adresleri (en fazla 10, virgülle):", width=44).pack(side="left")
-        ttk.Entry(fa, textvariable=s["func_addresses"], width=60).pack(side="left", fill="x", expand=True)
+        ttk.Entry(fa, textvariable=s["func_addresses"], width=45).pack(side="left")
         self.lbl_func = ttk.Label(g, text="Boş bırakılırsa tablodaki ilk 10 R/W register kullanılır. Her ayar değişikliğinden sonra bu "
                                           "adresler okunur; R/W olanlara mevcut değer geri yazılıp tekrar okunarak doğrulanır.",
-                                  foreground="#666", wraplength=850)
+                                  foreground="#666", wraplength=760)
         self.lbl_func.grid(row=6, column=0, columnspan=2, sticky="w")
         self._opt_check(g, "Her ayarda fonksiyon testi", s["functional_check"], 0, 1)
         self._opt_check(g, "Eski ayarla yanıt vermediğini kontrol et", s["check_old_silent"], 1, 1)
