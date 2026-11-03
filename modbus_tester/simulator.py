@@ -68,6 +68,11 @@ class SimDevice:
             return 2
         if not r.writable and addr not in self.accept_ro:
             return 2
+        validator = self.faults.get("validator")
+        if validator is not None:
+            code = validator(addr, words[0], self.mem)
+            if code:
+                return code
         if not self.no_range and (r.min is not None or r.max is not None):
             from .table import decode_value
             v = decode_value(r, words[: r.words])

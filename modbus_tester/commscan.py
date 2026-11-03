@@ -171,17 +171,17 @@ class CommScanner:
         if self.func_rw is not None and st == OK:
             r = self.func_rw
             try:
+                # Mevcut deger geri yazilir: haberlesmeyi (FC06 + geri okuma) dogrular, cihazdaki ayari degistirmez
+                # ve tarih gibi birbirine bagli registerlarda gecersiz deger reddi olusmaz.
                 orig = self.client.read_registers(self.pa(r.address), 1)[0]
-                test = int(r.max) if orig != int(r.max) else int(r.min)
-                self.client.write_register(self.pa(r.address), test & 0xFFFF)
-                back = self.client.read_registers(self.pa(r.address), 1)[0]
                 self.client.write_register(self.pa(r.address), orig)
-                if back != test & 0xFFFF:
+                back = self.client.read_registers(self.pa(r.address), 1)[0]
+                if back != orig:
                     st = FAIL
-                    notes.append(f"{r.address} yaz/oku doğrulanamadı")
+                    notes.append(f"{r.address} yaz/oku doğrulanamadı ({orig} yazıldı, {back} okundu)")
             except ModbusError as e:
                 st = FAIL
-                notes.append(f"yazma: {e}")
+                notes.append(f"yazma ({r.address} {r.name}): {e}")
         return st, "; ".join(notes)
 
     def recovery(self, target: LineSettings, prev: LineSettings, check_reg: int) -> Optional[LineSettings]:
@@ -281,7 +281,8 @@ class CommScanner:
             r = self.probe(prev, reg, retries=0)
             st.old_silent = OK if r is None else WARN
             if r is not None:
-                st.note += "Eski ayarla da yanıt veriyor. "
+                st.note += ("Eski ayarla da yanıt veriyor (cihaz parity bitini kontrol etmiyor olabilir). " if kind == "parity"
+                            else "Eski ayarla da yanıt veriyor. ")
             self.client.reconfigure(target)
         if self.o.functional_check:
             self.client.reconfigure(target)

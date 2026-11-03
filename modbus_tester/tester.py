@@ -150,6 +150,7 @@ class RegisterTester:
         self.job = job
         self.res: Dict[int, RegResult] = {r.address: RegResult(r.address) for r in regs}
         self.original: Dict[int, List[int]] = {}
+        self.accepted: Dict[int, list] = {}
 
     # ---- yardimcilar
     def pa(self, r: Register) -> int:
@@ -247,6 +248,7 @@ class RegisterTester:
         self.job.set_phase("Tekli okuma testi")
         rr = [r for r in regs if r.readable]
         for i, r in enumerate(rr):
+            self.job.current = r.address
             self.job.check()
             prog(i, len(rr))
             res = self.res[r.address]
@@ -276,6 +278,7 @@ class RegisterTester:
         self.job.set_phase("Tekli yazma + geri okuma doğrulama testi")
         wr = [r for r in regs if r.writable]
         for i, r in enumerate(wr):
+            self.job.current = r.address
             self.job.check()
             prog(i, len(wr))
             res = self.res[r.address]
@@ -314,16 +317,25 @@ class RegisterTester:
                 res.notes.append("Min/Max yok: mevcut değer geri yazılarak test edildi")
             written, back = [], []
             status = OK
+            rejected = []       # (deger, istisna kodu)
+            accepted = []
+            changed = False
             for v in cands:
                 words = self.enc(r, v)
                 try:
                     self.write_reg(r, words)
-                except ModbusError as e:
-                    status = FAIL
+                except ModbusException as e:
+                    rejected.append((v, e.code))
                     written.append(f"{fmt_value(v)}!")
                     res.notes.append(f"Yazma {fmt_value(v)}: {e}")
                     continue
+                except ModbusError as e:
+                    status = FAIL
+                    written.append(f"{fmt_value(v)}?")
+                    res.notes.append(f"Yazma {fmt_value(v)}: {e}")
+                    continue
                 written.append(fmt_value(v))
+                changed = changed or words != orig
                 self.settle()
                 try:
                     rb = self.read_reg(r)
@@ -336,17 +348,47 @@ class RegisterTester:
                 back.append(fmt_value(rv))
                 if rb != words:
                     status = FAIL
-                    res.notes.append(f"Doğrulama: {fmt_value(v)} yazıldı, {fmt_value(rv)} okundu")
-            if self.o.restore and cands != [ov]:
+                    res.notes.append(f"Doğrulama: {fmt_value(v)} yazıldı, {fmt_value(rv)} okundu"
+                                     + (" (komut registerı olabilir: yazınca kendini sıfırlıyor)" if rv == 0 and v else ""))
+                elif words != orig:
+                    accepted.append(v)
+            if rejected:
+                codes = {c for _, c in rejected}
+                if 2 in codes or 1 in codes:
+                    status = FAIL
+                    res.notes.append("Tabloda R/W ama cihaz yazmayı adres/fonksiyon hatasıyla reddediyor (bu register/özellik cihazda yok olabilir)")
+                else:
+                    # mevcut degeri yazmayi dene: register tamamen kilitli mi, yoksa sadece o deger mi reddediliyor?
+                    try:
+                        self.write_reg(r, orig)
+                        locked = False
+                    except ModbusException:
+                        locked = True
+                    except ModbusError:
+                        locked = None
+                    if locked:
+                        res.notes.append("Mevcut değer bile reddedildi: register şu anki ayarlarda yazmaya kapalı "
+                                         "(başka bir registera bağlı olabilir, örn. mod/seçim registerı)")
+                    else:
+                        res.notes.append("Tablo aralığındaki değer reddedildi (03): aralık başka registerlara bağlı olabilir "
+                                         "(Remarks'taki koşullara bakın) ya da tablodaki Min/Max hatalı")
+                    if status == OK:
+                        status = WARN
+            if accepted:
+                self.accepted[r.address] = accepted
+            if self.o.restore and changed:
                 try:
                     self.write_reg(r, orig)
-                    self.settle()
+                except ModbusError as e:
+                    res.notes.append(f"Orijinal değer geri yazılırken: {e}")
+                self.settle()
+                try:
                     if self.read_reg(r) != orig:
                         status = FAIL
                         res.notes.append("Orijinal değer geri yüklenemedi")
                 except ModbusError as e:
                     status = FAIL
-                    res.notes.append(f"Orijinal değer geri yazılamadı: {e}")
+                    res.notes.append(f"Geri yükleme kontrolü okunamadı: {e}")
             res.write = status
             res.written = ", ".join(written)
             res.readback = ", ".join(back)
@@ -356,6 +398,7 @@ class RegisterTester:
         self.job.set_phase("Salt okunur koruma testi (R registerlara yazma reddedilmeli)")
         rr = [r for r in regs if r.access == "R"]
         for i, r in enumerate(rr):
+            self.job.current = r.address
             self.job.check()
             prog(i, len(rr))
             res = self.res[r.address]
@@ -384,6 +427,7 @@ class RegisterTester:
         self.job.set_phase("Aralık dışı değer testi (min-1 / max+1 reddedilmeli)")
         rr = [r for r in regs if r.access == "RW" and self.in_write_test(r) and (r.min is not None or r.max is not None)]
         for i, r in enumerate(rr):
+            self.job.current = r.address
             self.job.check()
             prog(i, len(rr))
             res = self.res[r.address]
@@ -444,6 +488,7 @@ class RegisterTester:
             if cur:
                 split.append(cur)
         for i, g in enumerate(split):
+            self.job.current = g[0].address
             self.job.check()
             prog(i, len(split))
             label = f"{g[0].address}-{g[-1].address + g[-1].words - 1}"
@@ -470,9 +515,17 @@ class RegisterTester:
                 off += r.words
                 st = OK
                 if r.access == "RW" and r.address in self.original and w != self.original[r.address]:
-                    st = WARN
-                    mism += 1
-                    res.notes.append(f"Blok okuma değeri ({fmt_value(self.dec(r, w))}) tekli okumadan farklı ({fmt_value(self.dec(r, self.original[r.address]))})")
+                    try:
+                        now = self.read_reg(r)
+                    except ModbusError:
+                        now = None
+                    if now is not None and now != self.original[r.address]:
+                        res.notes.append(f"Değer test sırasında kendiliğinden değişiyor ({fmt_value(self.dec(r, self.original[r.address]))} → "
+                                         f"{fmt_value(self.dec(r, now))}), örn. saat/sayaç - blok okuma tutarlı")
+                    else:
+                        st = WARN
+                        mism += 1
+                        res.notes.append(f"Blok okuma değeri ({fmt_value(self.dec(r, w))}) tekli okumadan farklı ({fmt_value(self.dec(r, self.original[r.address]))})")
                 _set(res, "block_read", st)
             self.job.log(f"Blok okuma {label} ({n} reg): OK" + (f", {mism} farklı değer" if mism else ""))
 
@@ -481,6 +534,7 @@ class RegisterTester:
         bs = max(1, min(123, self.o.block_size))
         groups = make_groups(regs, lambda r: r.access == "RW" and self.in_write_test(r), bs)
         for i, g in enumerate(groups):
+            self.job.current = g[0].address
             self.job.check()
             prog(i, len(groups))
             label = f"{g[0].address}-{g[-1].address + g[-1].words - 1}"
@@ -497,52 +551,97 @@ class RegisterTester:
                     _set(self.res[r.address], "block_write", FAIL)
                     self.res[r.address].notes.append(f"Blok yazma öncesi okuma: {e}")
                 continue
+            # Tekli testte kabul edilip dogrulanan degerler kullanilir (bagimli registerlarda gecersiz kombinasyon olusmasin)
             new = []
             off = 0
             for r in g:
-                ov = self.dec(r, orig[off:off + r.words])
-                new += self.enc(r, self.block_value(r, ov))
+                ow = orig[off:off + r.words]
+                acc = self.accepted.get(r.address)
+                if acc:
+                    ov = self.dec(r, ow)
+                    pick = next((v for v in acc if v != ov), acc[0])
+                    new += self.enc(r, pick)
+                else:
+                    new += ow
                 off += r.words
-            try:
-                self.c.write_registers(self.pa(g[0]), new)
-            except ModbusError as e:
+            identity_only = new == orig
+            err = self._block_write_verify(g, new, label)
+            if isinstance(err, ModbusException) and err.code == 3 and not identity_only:
+                # degisik degerlerle reddedildi -> mevcut degerlerle dene
+                err2 = self._block_write_verify(g, orig, label)
+                if err2 is None:
+                    off = 0
+                    for r in g:
+                        res = self.res[r.address]
+                        changed = new[off:off + r.words] != orig[off:off + r.words]
+                        off += r.words
+                        if changed:
+                            _set(res, "block_write", WARN)
+                            res.notes.append(f"Blok yazma {label}: farklı değerlerle reddedildi (03), mevcut değerlerle kabul edildi "
+                                             "- bloktaki registerlar birbirine bağlı olabilir")
+                    self.job.log(f"Blok yazma {label} ({n} reg): farklı değerler reddedildi, mevcut değerlerle OK")
+                    continue
+                err = err2
+            if isinstance(err, Exception):
+                bad = [r.address for r in g if self.res[r.address].write in (FAIL, WARN)]
+                hint = f" (tekli yazmada sorun çıkan registerlar: {', '.join(map(str, bad[:8]))})" if bad else ""
                 for r in g:
                     _set(self.res[r.address], "block_write", FAIL)
-                    self.res[r.address].notes.append(f"Blok yazma {label}: {e}")
-                self.job.log(f"Blok yazma {label} ({n} reg): HATA - {e}")
-                continue
-            self.settle()
-            try:
-                back = self.c.read_registers(self.pa(g[0]), n, function=3)
-            except ModbusError as e:
-                back = None
-                for r in g:
-                    _set(self.res[r.address], "block_write", FAIL)
-                    self.res[r.address].notes.append(f"Blok yazma geri okuma: {e}")
-            if back is not None:
-                off = 0
-                bad = 0
-                for r in g:
-                    res = self.res[r.address]
-                    exp = new[off:off + r.words]
-                    got = back[off:off + r.words]
-                    off += r.words
-                    if exp == got:
-                        _set(res, "block_write", OK)
-                    else:
-                        bad += 1
-                        _set(res, "block_write", FAIL)
-                        res.notes.append(f"Blok yazma doğrulama: {fmt_value(self.dec(r, exp))} yazıldı, {fmt_value(self.dec(r, got))} okundu")
-                self.job.log(f"Blok yazma {label} ({n} reg): " + ("OK" if not bad else f"{bad} register doğrulanamadı"))
-            if self.o.restore:
+                    self.res[r.address].notes.append(f"Blok yazma {label}: {err}{hint}")
+                self.job.log(f"Blok yazma {label} ({n} reg): HATA - {err}")
+            if self.o.restore and not identity_only:
                 try:
                     self.c.write_registers(self.pa(g[0]), orig)
-                    if self.c.read_registers(self.pa(g[0]), n, function=3) != orig:
-                        raise ModbusError("geri okuma farklı")
+                except ModbusError:
+                    pass
+                try:
+                    cur = self.c.read_registers(self.pa(g[0]), n, function=3)
+                    if cur != orig:
+                        # blok olarak geri yazilamadiysa tek tek dene
+                        off = 0
+                        for r in g:
+                            ow = orig[off:off + r.words]
+                            if cur[off:off + r.words] != ow:
+                                try:
+                                    self.write_reg(r, ow)
+                                except ModbusError as e:
+                                    _set(self.res[r.address], "block_write", FAIL)
+                                    self.res[r.address].notes.append(f"Orijinal değer geri yüklenemedi: {e}")
+                            off += r.words
                 except ModbusError as e:
                     for r in g:
-                        _set(self.res[r.address], "block_write", FAIL)
-                        self.res[r.address].notes.append(f"Blok orijinal değerler geri yüklenemedi: {e}")
+                        self.res[r.address].notes.append(f"Blok geri yükleme kontrolü okunamadı: {e}")
+
+    def _block_write_verify(self, g, values, label):
+        """None: yazma + dogrulama tamam; Exception: yazma hatasi; 'verify': dogrulama hatasi."""
+        n = len(values)
+        try:
+            self.c.write_registers(self.pa(g[0]), values)
+        except ModbusError as e:
+            return e
+        self.settle()
+        try:
+            back = self.c.read_registers(self.pa(g[0]), n, function=3)
+        except ModbusError as e:
+            for r in g:
+                _set(self.res[r.address], "block_write", FAIL)
+                self.res[r.address].notes.append(f"Blok yazma geri okuma: {e}")
+            return "verify"
+        off = 0
+        bad = 0
+        for r in g:
+            res = self.res[r.address]
+            exp = values[off:off + r.words]
+            got = back[off:off + r.words]
+            off += r.words
+            if exp == got:
+                _set(res, "block_write", OK)
+            else:
+                bad += 1
+                _set(res, "block_write", FAIL)
+                res.notes.append(f"Blok yazma doğrulama: {fmt_value(self.dec(r, exp))} yazıldı, {fmt_value(self.dec(r, got))} okundu")
+        self.job.log(f"Blok yazma {label} ({n} reg): " + ("OK" if not bad else f"{bad} register doğrulanamadı"))
+        return None if not bad else "verify"
 
 
 def summarize(results: Dict[int, RegResult]) -> dict:

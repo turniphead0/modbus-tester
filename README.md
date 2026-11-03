@@ -24,8 +24,13 @@ Kaynak koddan çalıştırmak için: `pip install -r requirements.txt` ve `pytho
    (Min > Max, R/W bilgisi olmayan satır vb.) uyarı olarak listelenir.
 3. **Register listesi** sekmesinde testten çıkarmak istediğiniz registerlara çift tıklayın.
 4. **Register testi** veya **Haberleşme ayarı tarama** sekmesinden seçenekleri ayarlayıp başlatın. İlerleme ve log alt kısımda görünür.
-5. Bitince sonuçlar **Sonuçlar** sekmesinde renkli tablo olarak açılır; "Raporu aç (HTML)", "Excel'i aç" ve
+5. Test başlayınca **Sonuçlar (canlı)** sekmesi açılır; rapor tablosu test ilerledikçe gerçek zamanlı dolar
+   ("Canlı takip" o an test edilen registera kaydırır). Bitince "Raporu aç (HTML)", "Excel'i aç" ve
    "Farklı kaydet..." ile rapor alınır.
+6. **Manuel okuma / yazma** sekmesi: tablodaki tüm registerlar listelenir. Seçilileri veya tümünü okuyabilir
+   (bitişik olanlar blok halinde okunur), "Sürekli oku" ile belirli aralıkla canlı izleyebilir, seçili registera
+   değer yazıp geri okuyarak doğrulayabilirsiniz. "Serbest adres" alanı tabloda olmayan adresleri de FC03/FC04 ile
+   okumaya ve FC06/FC16 ile yazmaya izin verir.
 
 Cihaz olmadan denemek için bağlantı tipini **Simülatör** seçin: yüklenen tablodan sanal bir cihaz oluşturulur.
 "Simülatöre örnek hatalar ekle" seçeneği, hatalı bir raporun nasıl göründüğünü gösterir.

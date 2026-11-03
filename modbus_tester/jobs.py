@@ -24,6 +24,7 @@ class Job:
         self.logs: List[str] = []
         self.progress = 0.0
         self.phase = ""
+        self.current = None   # su an test edilen register adresi
         self.done = False
         self.error: Optional[str] = None
         self.cancel_event = threading.Event()

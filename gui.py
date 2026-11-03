@@ -19,10 +19,10 @@ else:
     BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 
-from modbus_tester.table import load_table, save_csv, default_comm_config  # noqa: E402
+from modbus_tester.table import load_table, save_csv, default_comm_config, encode_value, decode_value, fmt_value  # noqa: E402
 from modbus_tester.rtu import LineSettings, ModbusClient, ModbusError  # noqa: E402
 from modbus_tester.simulator import SimDevice  # noqa: E402
-from modbus_tester.tester import TestOptions, run_register_test  # noqa: E402
+from modbus_tester.tester import TestOptions, run_register_test, summarize, make_groups  # noqa: E402
 from modbus_tester.commscan import ScanOptions, run_comm_scan  # noqa: E402
 from modbus_tester.jobs import Job  # noqa: E402
 from modbus_tester.report import write_reports  # noqa: E402
@@ -150,6 +150,7 @@ class App(tk.Tk):
         self._build_test_tab()
         self._build_scan_tab()
         self._build_regs_tab()
+        self._build_manual_tab()
         self._build_results_tab()
         self._build_status(bottom)
 
@@ -349,9 +350,322 @@ class App(tk.Tk):
         self.tv_regs.tag_configure("comm", background="#fff4d6")
         self.tv_regs.bind("<Double-1>", self.toggle_skip)
 
+    def _build_manual_tab(self):
+        t = ttk.Frame(self.nb, padding=6)
+        self.tab_manual = t
+        self.nb.add(t, text="  Manuel okuma / yazma  ")
+        top = ttk.Frame(t)
+        top.pack(fill="x", pady=(0, 4))
+        ttk.Button(top, text="Seçilileri oku", command=lambda: self.manual_read(selected=True)).pack(side="left")
+        ttk.Button(top, text="Tümünü oku", command=lambda: self.manual_read(selected=False)).pack(side="left", padx=4)
+        self.v_mpoll = tk.BooleanVar(value=False)
+        ttk.Checkbutton(top, text="Sürekli oku, her", variable=self.v_mpoll, command=self.manual_poll_toggle).pack(side="left", padx=(12, 2))
+        self.v_mpoll_ms = tk.StringVar(value="1000")
+        ttk.Spinbox(top, from_=200, to=60000, increment=100, textvariable=self.v_mpoll_ms, width=7).pack(side="left")
+        ttk.Label(top, text="ms (seçili varsa seçilileri, yoksa listedekileri)").pack(side="left", padx=4)
+        self.v_mfilter = tk.StringVar()
+        ttk.Label(top, text="Ara:").pack(side="left", padx=(16, 2))
+        ttk.Entry(top, textvariable=self.v_mfilter, width=20).pack(side="left")
+        self.v_mfilter.trace_add("write", lambda *a: self.render_manual())
+
+        wr = ttk.LabelFrame(t, text=" Seçili registera yaz ", padding=6)
+        wr.pack(fill="x", pady=(0, 4))
+        self.lbl_msel = ttk.Label(wr, text="Register seçin (çift tıklama değeri buraya getirir)", width=44)
+        self.lbl_msel.pack(side="left")
+        ttk.Label(wr, text="Değer:").pack(side="left", padx=(8, 2))
+        self.v_mval = tk.StringVar()
+        ent = ttk.Entry(wr, textvariable=self.v_mval, width=14)
+        ent.pack(side="left")
+        ent.bind("<Return>", lambda e: self.manual_write())
+        self.v_mfc16 = tk.BooleanVar(value=False)
+        ttk.Checkbutton(wr, text="FC16 ile yaz", variable=self.v_mfc16).pack(side="left", padx=6)
+        ttk.Button(wr, text="Yaz + geri oku", style="Accent.TButton", command=self.manual_write).pack(side="left", padx=4)
+
+        raw = ttk.LabelFrame(t, text=" Serbest adres (tabloda olmayan registerlar dahil) ", padding=6)
+        raw.pack(fill="x", pady=(0, 4))
+        self.v_raddr = tk.StringVar(value="")
+        self.v_rcount = tk.StringVar(value="1")
+        self.v_rfc = tk.StringVar(value="FC03")
+        self.v_rvals = tk.StringVar(value="")
+        ttk.Label(raw, text="Adres:").pack(side="left")
+        ttk.Entry(raw, textvariable=self.v_raddr, width=8).pack(side="left", padx=2)
+        ttk.Label(raw, text="Adet:").pack(side="left", padx=(6, 0))
+        ttk.Spinbox(raw, from_=1, to=125, textvariable=self.v_rcount, width=5).pack(side="left", padx=2)
+        ttk.Combobox(raw, textvariable=self.v_rfc, values=["FC03", "FC04"], state="readonly", width=6).pack(side="left", padx=2)
+        ttk.Button(raw, text="Oku", command=self.raw_read).pack(side="left", padx=4)
+        ttk.Label(raw, text="Değerler:").pack(side="left", padx=(12, 2))
+        ttk.Entry(raw, textvariable=self.v_rvals, width=18).pack(side="left", padx=2)
+        ttk.Button(raw, text="Yaz", command=self.raw_write).pack(side="left", padx=4)
+        ttk.Label(raw, text="(virgülle; tek değer FC06, çok değer FC16)", foreground="#666").pack(side="left")
+
+        cols = ("address", "hex", "name", "access", "min", "max", "value", "raw", "time", "status")
+        heads = ("Address", "Hex", "Designation", "R/W", "Min", "Max", "Değer", "Ham", "Zaman", "Son işlem")
+        widths = (70, 60, 230, 50, 55, 55, 80, 120, 70, 420)
+        self.tv_man = self._tree(t, cols, heads, widths)
+        self.tv_man.bind("<<TreeviewSelect>>", self.manual_select)
+        self.tv_man.bind("<Double-1>", self.manual_pick)
+        self.man_state = {}   # addr -> dict(value, raw, time, status, tag)
+        self.man_busy = False
+        self._mpoll_after = None
+
+    # ---- manuel okuma/yazma
+    def render_manual(self):
+        tv = self.tv_man
+        tv.delete(*tv.get_children())
+        q = self.v_mfilter.get().lower().strip()
+        sec = None
+        for r in self.regs:
+            if q and q not in f"{r.address} {r.hex} {r.name} {r.section}".lower():
+                continue
+            if r.section != sec:
+                sec = r.section
+                tv.insert("", "end", iid=f"sec_{r.address}", values=("", "", sec or ""), tags=("sec",))
+            st = self.man_state.get(r.address, {})
+            tv.insert("", "end", iid=str(r.address), tags=(st.get("tag", ""),), values=self._man_row(r, st))
+
+    def _man_row(self, r, st):
+        return (r.address, r.hex, r.name, {"RW": "R/W"}.get(r.access, r.access or "-"), self._fv(r.min), self._fv(r.max),
+                st.get("value", ""), st.get("raw", ""), st.get("time", ""), st.get("status", ""))
+
+    def _man_set(self, r, **kw):
+        st = self.man_state.setdefault(r.address, {})
+        st.update(kw)
+        st["time"] = time.strftime("%H:%M:%S")
+        iid = str(r.address)
+        if self.tv_man.exists(iid):
+            self.tv_man.item(iid, values=self._man_row(r, st), tags=(st.get("tag", ""),))
+
+    def manual_select(self, ev=None):
+        sel = [self._reg(i) for i in self.tv_man.selection()]
+        sel = [r for r in sel if r]
+        if len(sel) == 1:
+            r = sel[0]
+            rng = f"  [{self._fv(r.min)}..{self._fv(r.max)}]" if r.min is not None else ""
+            self.lbl_msel.configure(text=f"{r.address} {r.name} ({ {'RW': 'R/W'}.get(r.access, r.access)}){rng}")
+        elif sel:
+            self.lbl_msel.configure(text=f"{len(sel)} register seçili (yazma tek tek uygulanır)")
+
+    def manual_pick(self, ev):
+        iid = self.tv_man.identify_row(ev.y)
+        r = self._reg(iid) if iid else None
+        if r:
+            self.v_mval.set(self.man_state.get(r.address, {}).get("value", ""))
+
+    def _manual_ctx(self):
+        if self.busy():
+            messagebox.showinfo(APP_NAME, "Çalışan bir test var; manuel işlem için bitmesini bekleyin veya durdurun.")
+            return None
+        if self.man_busy:
+            return None
+        try:
+            ls = self.settings()
+        except ValueError as e:
+            messagebox.showwarning(APP_NAME, str(e))
+            return None
+        sim = self.get_sim(ls) if ls.transport == "sim" else None
+        fc = 4 if self.o["read_fc"].get().startswith("FC04") else 3
+        off = int(self.o["address_offset"].get() or 0)
+        wob = self.o["word_order_big"].get()
+        return ls, sim, fc, off, wob
+
+    def _run_manual(self, fn):
+        ctx = self._manual_ctx()
+        if ctx is None:
+            return False
+        self.man_busy = True
+        ls, sim = ctx[0], ctx[1]
+
+        def work():
+            try:
+                c = ModbusClient(ls, sim_device=sim).open()
+                try:
+                    fn(c, *ctx[2:])
+                finally:
+                    c.close()
+            except Exception as e:
+                msg = f"Port açılamadı / bağlantı hatası: {e}"
+                self.after(0, lambda: messagebox.showerror(APP_NAME, msg))
+                self.after(0, lambda: self.v_mpoll.set(False))
+            finally:
+                self.man_busy = False
+        threading.Thread(target=work, daemon=True).start()
+        return True
+
+    def _post(self, fn, *a, **k):
+        self.after(0, lambda: fn(*a, **k))
+
+    def manual_read(self, selected=True, quiet=False):
+        if not self.regs:
+            if not quiet:
+                messagebox.showinfo(APP_NAME, "Önce tablo yükleyin.")
+            return
+        if selected:
+            regs = [r for r in (self._reg(i) for i in self.tv_man.selection()) if r]
+            if not regs:
+                if not quiet:
+                    messagebox.showinfo(APP_NAME, "Listeden register seçin (Ctrl/Shift ile çoklu).")
+                return
+        else:
+            vis = set(self.tv_man.get_children())
+            regs = [r for r in self.regs if str(r.address) in vis]
+        regs = [r for r in regs if r.readable]
+
+        def fn(c, fc, off, wob):
+            groups = make_groups(regs, lambda r: True, 100)
+            for g in groups:
+                fcg = fc if g[0].access == "R" else 3
+                same = all((fc if r.access == "R" else 3) == fcg for r in g)
+                n = sum(r.words for r in g)
+                try:
+                    if not same or len(g) == 1:
+                        raise ModbusError("tek tek")
+                    words = c.read_registers(g[0].address - off, n, function=fcg)
+                    o = 0
+                    for r in g:
+                        w = words[o:o + r.words]
+                        o += r.words
+                        self._post(self._man_ok_read, r, w, wob, f"Blok okuma FC{fcg:02d} ({g[0].address}-{g[-1].address})")
+                except ModbusError:
+                    for r in g:
+                        f1 = fc if r.access == "R" else 3
+                        try:
+                            w = c.read_registers(r.address - off, r.words, function=f1)
+                            self._post(self._man_ok_read, r, w, wob, f"Okuma FC{f1:02d}")
+                        except ModbusError as e:
+                            self._post(self._man_set, r, status=f"Okuma hatası: {e}", tag="fail")
+        self._run_manual(fn)
+
+    def _man_ok_read(self, r, w, wob, how):
+        v = decode_value(r, w, wob)
+        tag = "ok"
+        note = how
+        if (r.min is not None and v < r.min) or (r.max is not None and v > r.max):
+            tag = "warn"
+            note += " - Min/Max dışında"
+        self._man_set(r, value=fmt_value(v), raw=" ".join(f"0x{x:04X}" for x in w), status=note, tag=tag)
+
+    def _parse_value(self, txt):
+        t = txt.strip().replace(",", ".")
+        if t.lower().startswith("0x"):
+            return int(t, 16)
+        f = float(t)
+        return int(f) if f.is_integer() else f
+
+    def manual_write(self):
+        regs = [r for r in (self._reg(i) for i in self.tv_man.selection()) if r]
+        if not regs:
+            messagebox.showinfo(APP_NAME, "Yazmak için listeden register seçin.")
+            return
+        try:
+            v = self._parse_value(self.v_mval.get())
+        except ValueError:
+            messagebox.showwarning(APP_NAME, "Değer sayı olmalı (örn. 12, -5, 0x1A)")
+            return
+        ro = [r for r in regs if r.access == "R"]
+        if ro and not messagebox.askyesno(APP_NAME, f"{len(ro)} register tabloda salt okunur (R). Yine de yazılsın mı?"):
+            return
+        out = [r for r in regs if (r.min is not None and v < r.min) or (r.max is not None and v > r.max)]
+        if out and not messagebox.askyesno(APP_NAME, "Değer tablodaki Min/Max dışında. Yine de yazılsın mı?"):
+            return
+        use16 = self.v_mfc16.get()
+
+        def fn(c, fc, off, wob):
+            for r in regs:
+                words = encode_value(r, v, wob)
+                try:
+                    if r.words == 1 and not use16:
+                        c.write_register(r.address - off, words[0])
+                        how = "FC06"
+                    else:
+                        c.write_registers(r.address - off, words)
+                        how = "FC16"
+                except ModbusError as e:
+                    self._post(self._man_set, r, status=f"Yazma {fmt_value(v)} reddedildi: {e}", tag="fail")
+                    continue
+                try:
+                    back = c.read_registers(r.address - off, r.words, function=fc if r.access == "R" else 3)
+                except ModbusError as e:
+                    self._post(self._man_set, r, status=f"{how} {fmt_value(v)} yazıldı, geri okuma hatası: {e}", tag="warn")
+                    continue
+                bv = decode_value(r, back, wob)
+                ok = back == words
+                self._post(self._man_set, r, value=fmt_value(bv), raw=" ".join(f"0x{x:04X}" for x in back),
+                           status=(f"{how} {fmt_value(v)} yazıldı, geri okundu: " + ("doğrulandı" if ok else f"FARKLI ({fmt_value(bv)})")),
+                           tag="ok" if ok else "fail")
+        self._run_manual(fn)
+
+    def raw_read(self):
+        try:
+            a = int(self.v_raddr.get().strip(), 0)
+            n = int(self.v_rcount.get())
+        except ValueError:
+            messagebox.showwarning(APP_NAME, "Adres ve adet sayı olmalı")
+            return
+        fc = 4 if self.v_rfc.get() == "FC04" else 3
+
+        def fn(c, _fc, off, wob):
+            try:
+                vals = c.read_registers(a - off, n, function=fc)
+                txt = ", ".join(f"{a + i}={v} (0x{v:04X})" for i, v in enumerate(vals))
+                self._post(self._log_manual, f"FC{fc:02d} {a}..{a + n - 1}: {txt}")
+            except ModbusError as e:
+                self._post(self._log_manual, f"FC{fc:02d} {a}..{a + n - 1}: HATA {e}")
+        self._run_manual(fn)
+
+    def raw_write(self):
+        try:
+            a = int(self.v_raddr.get().strip(), 0)
+            vals = [int(float(x), 0) if not x.strip().lower().startswith("0x") else int(x, 16)
+                    for x in self.v_rvals.get().replace(";", ",").split(",") if x.strip()]
+        except ValueError:
+            messagebox.showwarning(APP_NAME, "Adres ve değerler sayı olmalı (örn. 1, 2, 0x10)")
+            return
+        if not vals:
+            messagebox.showwarning(APP_NAME, "Yazılacak değer girin")
+            return
+
+        def fn(c, fc, off, wob):
+            try:
+                if len(vals) == 1:
+                    c.write_register(a - off, vals[0] & 0xFFFF)
+                else:
+                    c.write_registers(a - off, [v & 0xFFFF for v in vals])
+                back = c.read_registers(a - off, len(vals), function=3)
+                ok = back == [v & 0xFFFF for v in vals]
+                self._post(self._log_manual, f"Yazıldı {a}: {vals} → geri okunan {back} " + ("(doğrulandı)" if ok else "(FARKLI)"))
+            except ModbusError as e:
+                self._post(self._log_manual, f"Yazma {a} {vals}: HATA {e}")
+        self._run_manual(fn)
+
+    def _log_manual(self, msg):
+        self.txt_log.configure(state="normal")
+        self.txt_log.insert("end", time.strftime("%H:%M:%S ") + "[Manuel] " + msg + "\n")
+        self.txt_log.see("end")
+        self.txt_log.configure(state="disabled")
+
+    def manual_poll_toggle(self):
+        if self._mpoll_after:
+            self.after_cancel(self._mpoll_after)
+            self._mpoll_after = None
+        if self.v_mpoll.get():
+            self._manual_poll_tick()
+
+    def _manual_poll_tick(self):
+        if not self.v_mpoll.get():
+            return
+        if not self.man_busy and not self.busy():
+            sel = [r for r in (self._reg(i) for i in self.tv_man.selection()) if r]
+            self.manual_read(selected=bool(sel), quiet=True)
+        try:
+            ms = max(200, int(self.v_mpoll_ms.get()))
+        except ValueError:
+            ms = 1000
+        self._mpoll_after = self.after(ms, self._manual_poll_tick)
+
     def _build_results_tab(self):
         t = ttk.Frame(self.nb, padding=6)
-        self.nb.add(t, text="  Sonuçlar  ")
+        self.tab_results = t
+        self.nb.add(t, text="  Sonuçlar (canlı)  ")
         b = ttk.Frame(t)
         b.pack(fill="x", pady=(0, 4))
         self.v_resfilter = tk.StringVar(value="Tümü")
@@ -359,6 +673,8 @@ class App(tk.Tk):
         cb = ttk.Combobox(b, textvariable=self.v_resfilter, values=["Tümü", "Sadece HATA", "HATA + UYARI"], state="readonly", width=14)
         cb.pack(side="left", padx=4)
         cb.bind("<<ComboboxSelected>>", lambda e: self.render_results())
+        self.v_follow = tk.BooleanVar(value=True)
+        ttk.Checkbutton(b, text="Canlı takip (test edilen registera git)", variable=self.v_follow).pack(side="left", padx=8)
         self.lbl_ressum = ttk.Label(b, text="", font=("Segoe UI", 9, "bold"))
         self.lbl_ressum.pack(side="left", padx=10)
         self.res_frame = ttk.Frame(t)
@@ -560,6 +876,8 @@ class App(tk.Tk):
         self.params = default_comm_config(regs)
         self.render_params()
         self.render_regs()
+        self.man_state = {}
+        self.render_manual()
         self.cfg_last_table = p
         self.save_cfg()
 
@@ -699,6 +1017,10 @@ class App(tk.Tk):
         self.btn_scan.configure(state="disabled")
         self.btn_stop.configure(state="normal")
         self.lbl_sum.configure(text="")
+        self.last_result = None
+        self.tv_res = None
+        self._last_live = 0.0
+        self.nb.select(self.tab_results)
         self.save_cfg()
 
     def start_test(self):
@@ -820,6 +1142,9 @@ class App(tk.Tk):
                     self.lbl_sum.configure(text=f"{sm['steps']} adım   OK: {sm['OK']}   UYARI: {sm['UYARI']}   HATA: {sm['HATA']}")
             if not j.done:
                 self.lbl_phase.configure(text=j.phase or "Çalışıyor...")
+                if time.time() - getattr(self, "_last_live", 0) > 0.7:
+                    self._last_live = time.time()
+                    self.live_update(j)
             elif getattr(j, "_handled", False) is False:
                 j._handled = True
                 self.on_job_done(j)
@@ -841,7 +1166,7 @@ class App(tk.Tk):
         if res is not None:
             self.last_result = (j.kind, res)
             self.render_results()
-            self.nb.select(3)
+            self.nb.select(self.tab_results)
         if j.kind == "scan" and res is not None and getattr(res, "final_settings", ""):
             self.apply_final(res)
         self.bell()
@@ -859,20 +1184,36 @@ class App(tk.Tk):
         sb = float(m.group(5))
         self.v_stopbits.set(str(int(sb)) if sb.is_integer() else str(sb))
 
+    # ---- sonuc tablosu (test sirasinda canli guncellenir)
+    def _res_show(self, st):
+        flt = self.v_resfilter.get()
+        if flt == "Sadece HATA":
+            return st == "HATA"
+        if flt == "HATA + UYARI":
+            return st in ("HATA", "UYARI")
+        return True
+
+    @staticmethod
+    def _fv(v):
+        return "" if v is None else (int(v) if float(v).is_integer() else v)
+
+    def _test_row(self, r, rr):
+        return (r["address"], r["name"], r.get("access_label", ""), self._fv(r.get("min")), self._fv(r.get("max")),
+                rr.value, rr.read, rr.written, rr.readback, rr.write, rr.block_read, rr.block_write, rr.ro_protect,
+                rr.range_protect, rr.overall, " | ".join(rr.notes))
+
+    def _scan_row(self, st):
+        return (st.no, st.purpose, st.param, st.register, st.raw, st.setting, st.from_settings, st.to_settings,
+                st.write_resp, st.verify, st.old_silent, st.functional, st.status, st.duration, st.note)
+
     def render_results(self):
         if not self.last_result:
             return
         kind, res = self.last_result
         for w in self.res_frame.winfo_children():
             w.destroy()
+        self.res_cache = {}
         flt = self.v_resfilter.get()
-
-        def show(st):
-            if flt == "Sadece HATA":
-                return st == "HATA"
-            if flt == "HATA + UYARI":
-                return st in ("HATA", "UYARI")
-            return True
         if kind == "test":
             cols = ("address", "name", "access", "min", "max", "value", "read", "written", "readback", "write",
                     "block_read", "block_write", "ro_protect", "range_protect", "overall", "notes")
@@ -880,22 +1221,18 @@ class App(tk.Tk):
                      "Blok okuma", "Blok yazma", "R koruma", "Aralık", "SONUÇ", "Açıklama")
             widths = (65, 190, 45, 50, 50, 70, 60, 80, 80, 60, 75, 75, 65, 60, 70, 400)
             tv = self._tree(self.res_frame, cols, heads, widths)
-            regmap = {r.address: r for r in self.regs}
+            tv.tag_configure("cur", background="#cfe2ff")
             sec = None
             for r in res.registers:
                 rr = res.results.get(r["address"])
-                if rr is None or not show(rr.overall):
+                if rr is None or not self._res_show(rr.overall):
                     continue
                 if r.get("section") != sec and flt == "Tümü":
                     sec = r.get("section")
                     tv.insert("", "end", values=("", sec or ""), tags=("sec",))
-                fv = lambda v: "" if v is None else (int(v) if float(v).is_integer() else v)
-                tv.insert("", "end", tags=(STATUS_TAG.get(rr.overall, ""),), values=(
-                    r["address"], r["name"], r.get("access_label", ""), fv(r.get("min")), fv(r.get("max")), rr.value,
-                    rr.read, rr.written, rr.readback, rr.write, rr.block_read, rr.block_write, rr.ro_protect,
-                    rr.range_protect, rr.overall, " | ".join(rr.notes)))
-            s = res.summary.get("overall", {})
-            self.lbl_ressum.configure(text=f"Register testi — OK: {s.get('OK', 0)}  UYARI: {s.get('UYARI', 0)}  HATA: {s.get('HATA', 0)}  ATLANDI: {s.get('ATLANDI', 0)}")
+                row = self._test_row(r, rr)
+                tv.insert("", "end", iid=str(r["address"]), tags=(STATUS_TAG.get(rr.overall, ""),), values=row)
+                self.res_cache[r["address"]] = row
         else:
             cols = ("no", "purpose", "param", "register", "raw", "setting", "from", "to", "write", "verify", "old",
                     "func", "status", "dur", "note")
@@ -903,15 +1240,75 @@ class App(tk.Tk):
                      "Doğrulama", "Eski sessiz", "Fonksiyon", "SONUÇ", "Süre", "Açıklama")
             widths = (35, 80, 100, 70, 50, 70, 120, 120, 150, 75, 75, 75, 65, 50, 400)
             tv = self._tree(self.res_frame, cols, heads, widths)
-            for st in res.steps:
-                if not show(st.status):
-                    continue
-                tv.insert("", "end", tags=(STATUS_TAG.get(st.status, ""),), values=(
-                    st.no, st.purpose, st.param, st.register, st.raw, st.setting, st.from_settings, st.to_settings,
-                    st.write_resp, st.verify, st.old_silent, st.functional, st.status, st.duration, st.note))
-            sm = res.summary
-            self.lbl_ressum.configure(text=f"Ayar tarama — {sm.get('steps', 0)} adım  OK: {sm.get('OK', 0)}  UYARI: {sm.get('UYARI', 0)}  HATA: {sm.get('HATA', 0)}   Son ayar: {res.final_settings}")
+            for st in list(res.steps):
+                row = self._scan_row(st)
+                self.res_cache[st.no] = row
+                if self._res_show(st.status):
+                    tv.insert("", "end", iid=f"s{st.no}", tags=(STATUS_TAG.get(st.status, ""),), values=row)
         self.tv_res = tv
+        self.update_res_summary()
+
+    def update_res_summary(self):
+        kind, res = self.last_result
+        if kind == "test":
+            s = summarize(res.results)["overall"] if res.results else {}
+            done = sum(1 for x in res.results.values() if x.overall != "-")
+            self.lbl_ressum.configure(text=f"Register testi — {done}/{len(res.results)} register   OK: {s.get('OK', 0)}  "
+                                           f"UYARI: {s.get('UYARI', 0)}  HATA: {s.get('HATA', 0)}  ATLANDI: {s.get('ATLANDI', 0)}")
+        else:
+            steps = list(res.steps)
+            c = {k: sum(1 for x in steps if x.status == k) for k in ("OK", "UYARI", "HATA")}
+            self.lbl_ressum.configure(text=f"Ayar tarama — {len(steps)} adım  OK: {c['OK']}  UYARI: {c['UYARI']}  HATA: {c['HATA']}"
+                                           + (f"   Son ayar: {res.final_settings}" if res.final_settings else ""))
+
+    def live_update(self, job):
+        """Calisan testin sonuclarini tabloya yansit (sadece degisen satirlar)."""
+        res = job.result
+        if res is None:
+            return
+        if job.kind == "test" and not res.results:
+            return
+        if not self.last_result or self.last_result[1] is not res or self.tv_res is None:
+            self.last_result = (job.kind, res)
+            self.render_results()
+            return
+        tv = self.tv_res
+        try:
+            if job.kind == "test":
+                regs = {r["address"]: r for r in res.registers}
+                for addr, rr in list(res.results.items()):
+                    row = self._test_row(regs[addr], rr)
+                    if self.res_cache.get(addr) == row:
+                        continue
+                    self.res_cache[addr] = row
+                    iid = str(addr)
+                    if tv.exists(iid):
+                        if self._res_show(rr.overall):
+                            tv.item(iid, values=row, tags=(STATUS_TAG.get(rr.overall, ""),))
+                        else:
+                            tv.delete(iid)
+                    elif self._res_show(rr.overall):
+                        tv.insert("", "end", iid=iid, values=row, tags=(STATUS_TAG.get(rr.overall, ""),))
+                if self.v_follow.get() and job.current is not None and tv.exists(str(job.current)):
+                    iid = str(job.current)
+                    tv.see(iid)
+                    tv.selection_set(iid)
+            else:
+                for st in list(res.steps):
+                    row = self._scan_row(st)
+                    if self.res_cache.get(st.no) == row:
+                        continue
+                    self.res_cache[st.no] = row
+                    iid = f"s{st.no}"
+                    if tv.exists(iid):
+                        tv.item(iid, values=row, tags=(STATUS_TAG.get(st.status, ""),))
+                    elif self._res_show(st.status):
+                        tv.insert("", "end", iid=iid, values=row, tags=(STATUS_TAG.get(st.status, ""),))
+                        if self.v_follow.get():
+                            tv.see(iid)
+        except tk.TclError:
+            self.render_results()
+        self.update_res_summary()
 
     def open_report(self, ext):
         if self.job and ext in self.job.reports:
