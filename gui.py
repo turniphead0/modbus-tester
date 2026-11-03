@@ -30,6 +30,17 @@ from modbus_tester.report import write_reports  # noqa: E402
 APP_NAME = "Modbus Cihaz Test Aracı"
 
 
+def app_version() -> str:
+    try:
+        with open(os.path.join(BASE, "version.txt"), encoding="utf-8") as fh:
+            return fh.read().strip()
+    except OSError:
+        return "geliştirme"
+
+
+VERSION = app_version()
+
+
 def user_dir() -> str:
     if os.name == "nt":
         root = os.environ.get("APPDATA") or os.path.expanduser("~")
@@ -96,7 +107,7 @@ class ScrollFrame(ttk.Frame):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title(APP_NAME)
+        self.title(f"{APP_NAME}  v{VERSION}")
         self.geometry("1320x860")
         self.minsize(1050, 700)
         try:

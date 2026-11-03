@@ -4,7 +4,7 @@ Register tablosuna göre Modbus cihazlarını test eden, kendi penceresi olan ma
 
 ## Kurulum
 
-[Releases](../../releases/latest) sayfasından **ModbusTester.exe** dosyasını indirip çift tıklayın.
+[Releases](../../releases/latest) sayfasından **ModbusTester-vX.Y.Z.exe** dosyasını indirip çift tıklayın.
 Python veya başka bir kurulum gerekmez. Windows SmartScreen uyarı verirse "Ek bilgi → Yine de çalıştır" seçin.
 
 Raporlar `Belgeler\ModbusTester Raporlar` klasörüne, ayarlar `%APPDATA%\ModbusTester` altına kaydedilir.

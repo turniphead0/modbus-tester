@@ -23,18 +23,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
+      - name: Surum numarasi
+        shell: pwsh
+        run: |
+          $v = "1.0.${{ github.run_number }}"
+          Set-Content -Path version.txt -Value $v -NoNewline
+          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Exe derle
         run: >
           pyinstaller --noconfirm --onefile --windowed --name ModbusTester
-          --add-data "ornek_DTR-20S-TS.pdf;."
+          --add-data "ornek_DTR-20S-TS.pdf;." --add-data "version.txt;."
           --collect-all pdfplumber --collect-all pdfminer --collect-all pypdfium2 --collect-all pypdfium2_raw
           --hidden-import serial.tools.list_ports
           gui.py
 
+      - name: Exe adina surum ekle
+        shell: pwsh
+        run: Rename-Item dist\ModbusTester.exe "ModbusTester-v$env:VERSION.exe"
+
       - name: Exe'yi dene (simulatorle)
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath dist\ModbusTester.exe -ArgumentList "--selftest","$env:RUNNER_TEMP\selftest.txt" -Wait -PassThru
+          $p = Start-Process -FilePath "dist\ModbusTester-v$env:VERSION.exe" -ArgumentList "--selftest","$env:RUNNER_TEMP\selftest.txt" -Wait -PassThru
           Get-Content "$env:RUNNER_TEMP\selftest.txt"
           if ($p.ExitCode -ne 0) { exit 1 }
 
@@ -42,14 +53,14 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force pkg | Out-Null
-          Copy-Item dist\ModbusTester.exe pkg\
+          Copy-Item "dist\ModbusTester-v$env:VERSION.exe" pkg\
           Copy-Item README.md, ornek_DTR-20S-TS.pdf, ornek_DTR-20S-TS_tablo.csv pkg\
-          Compress-Archive -Path pkg\* -DestinationPath ModbusTester-windows.zip
+          Compress-Archive -Path pkg\* -DestinationPath "ModbusTester-v$env:VERSION-windows.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ModbusTester-windows
-          path: ModbusTester-windows.zip
+          name: ModbusTester-v${{ env.VERSION }}-windows
+          path: ModbusTester-v${{ env.VERSION }}-windows.zip
 
       - name: Release yayinla
         uses: softprops/action-gh-release@v2
@@ -57,7 +68,7 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: Modbus Test Araci v1.0.${{ github.run_number }}
           body: |
-            Windows icin tek dosya uygulama. ModbusTester.exe dosyasini indirip cift tiklayin; Python kurulumu gerekmez.
+            Windows icin tek dosya uygulama. ModbusTester-v${{ env.VERSION }}.exe dosyasini indirip cift tiklayin; Python kurulumu gerekmez.
           files: |
-            dist/ModbusTester.exe
-            ModbusTester-windows.zip
+            dist/ModbusTester-v${{ env.VERSION }}.exe
+            ModbusTester-v${{ env.VERSION }}-windows.zip
