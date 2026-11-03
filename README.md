@@ -1,33 +1,31 @@
 # Modbus Cihaz Test Aracı
 
-Bilgisayarınızda yerel olarak çalışan, register tablosuna göre Modbus cihazlarını test eden uygulama.
-Tarayıcıda açılan bir arayüzü vardır (`http://127.0.0.1:8765`), internet bağlantısı gerekmez.
+Register tablosuna göre Modbus cihazlarını test eden, kendi penceresi olan masaüstü uygulaması (Windows).
 
-## Kurulum ve çalıştırma
+## Kurulum
 
-Gerekli: Python 3.9 veya üzeri (Windows için python.org'dan, kurulumda "Add Python to PATH" işaretli olsun).
+[Releases](../../releases/latest) sayfasından **ModbusTester.exe** dosyasını indirip çift tıklayın.
+Python veya başka bir kurulum gerekmez. Windows SmartScreen uyarı verirse "Ek bilgi → Yine de çalıştır" seçin.
 
-- **Windows:** `baslat.bat` dosyasına çift tıklayın. İlk çalıştırmada gerekli paketler kurulur (internet gerekir), sonra tarayıcı açılır.
-  Klasör ağ sürücüsünde (`\\sunucu\...`) olsa da çalışır. Sanal ortam `%LOCALAPPDATA%\modbus-tester\venv` altına kurulur;
-  sorun olursa bu klasörü silip tekrar çalıştırmak yeterli.
-- **Linux / macOS:** `./baslat.sh`
-- Elle: `pip install -r requirements.txt` ve ardından `python app.py`
+Raporlar `Belgeler\ModbusTester Raporlar` klasörüne, ayarlar `%APPDATA%\ModbusTester` altına kaydedilir.
+Uygulama son kullanılan bağlantı ayarlarını ve tabloyu hatırlar.
 
-Linux'ta seri porta erişim için kullanıcının `dialout` grubunda olması gerekebilir.
+Kaynak koddan çalıştırmak için: `pip install -r requirements.txt` ve `python gui.py`.
+(Tarayıcı arayüzü `python app.py`, komut satırı `python cli.py` olarak da duruyor.)
 
 ## Kullanım
 
-1. **Bağlantı ayarları:** Bağlantı tipi (Modbus RTU seri, Modbus TCP, RTU over TCP veya Simülatör), port, slave adresi,
-   baud rate, parity, data bit, stop bit, zaman aşımı, tekrar sayısı. "Bağlantıyı dene" ile tek register okunur.
-2. **Register tablosu:** PDF, Excel (.xlsx) veya CSV yükleyin. Örnek tablo formatındaki kolonlar
+1. **Bağlantı ayarları (sol üst):** Bağlantı tipi (Modbus RTU seri, Modbus TCP, RTU over TCP veya Simülatör), port,
+   slave adresi, baud rate, parity, data bit, stop bit, zaman aşımı, tekrar sayısı, istekler arası bekleme.
+   "Bağlantıyı dene" ile tek register okunur.
+2. **Register tablosu (sol alt):** "Tablo yükle..." ile PDF, Excel (.xlsx) veya CSV seçin. Örnek tablo formatındaki kolonlar
    (Address, Address Hex, Format, Word Counts, MCU Byte, Designation, Unit, R/W, Remarks, Multiplier,
-   Value If Not Available, Min, Max) ve Türkçe karşılıkları (Adres, Açıklama, Birim, Erişim...) otomatik tanınır.
-   Bölüm başlıkları (ör. "Settings", "Device Identification") korunur ve rapora da aynı şekilde yansır.
-   Tablodaki tutarsızlıklar (Min > Max, R/W bilgisi olmayan satır vb.) uyarı olarak listelenir.
-   "Register listesi" sekmesinden istediğiniz registerları testten çıkarabilirsiniz.
-3. **Register testi** veya **Haberleşme ayarı tarama modu** sekmesinden testi başlatın. İlerleme ve log canlı görünür.
-4. Test bitince rapor bağlantıları çıkar: **Excel**, **HTML** (tarayıcıdan PDF olarak yazdırılabilir), **CSV**, **JSON**.
-   Raporlar ayrıca `raporlar/` klasörüne kaydedilir.
+   Value If Not Available, Min, Max) ve Türkçe karşılıkları otomatik tanınır. Tablodaki tutarsızlıklar
+   (Min > Max, R/W bilgisi olmayan satır vb.) uyarı olarak listelenir.
+3. **Register listesi** sekmesinde testten çıkarmak istediğiniz registerlara çift tıklayın.
+4. **Register testi** veya **Haberleşme ayarı tarama** sekmesinden seçenekleri ayarlayıp başlatın. İlerleme ve log alt kısımda görünür.
+5. Bitince sonuçlar **Sonuçlar** sekmesinde renkli tablo olarak açılır; "Raporu aç (HTML)", "Excel'i aç" ve
+   "Farklı kaydet..." ile rapor alınır.
 
 Cihaz olmadan denemek için bağlantı tipini **Simülatör** seçin: yüklenen tablodan sanal bir cihaz oluşturulur.
 "Simülatöre örnek hatalar ekle" seçeneği, hatalı bir raporun nasıl göründüğünü gösterir.
@@ -99,7 +97,9 @@ ve uygulamada COM5'i seçin.
 
 ## Dosyalar
 
-- `app.py` – web arayüzü sunucusu
+- `gui.py` – masaüstü uygulaması (Windows exe bununla derlenir)
+- `app.py` – tarayıcı arayüzü (alternatif)
+- `.github/workflows/build-windows.yml` – Windows exe derlemesi
 - `cli.py` – komut satırı
 - `modbus_tester/rtu.py` – Modbus RTU/TCP istemcisi (FC03/04/06/16, CRC, zaman aşımı, tekrar)
 - `modbus_tester/table.py` – tablo import (PDF/XLSX/CSV), haberleşme parametresi tespiti
