@@ -57,7 +57,8 @@ Başlangıç ayarı soldaki bağlantı ayarlarıdır. Her parametre için:
 
 1. Mevcut ayarla ayar registerına yeni değer yazılır (cihaz yanıt vermeden hemen geçerse bu da tolere edilir).
 2. Beklenir (varsayılan 1500 ms), yeni ayarla (ör. 19200 baud) bağlanılır ve ayar registerı okunarak doğrulanır.
-3. Fonksiyon testi: yeni ayarla tablodaki ilk registerlar blok okunur ve bir R/W registera yazıp geri okunur.
+3. Fonksiyon testi: kullanıcının girdiği en fazla 10 adres (boşsa tablodaki ilk 10 R/W register) yeni ayarla okunur;
+   R/W olanlara mevcut değer geri yazılıp tekrar okunarak doğrulanır (cihaz ayarı değişmez).
 4. İsteğe bağlı: eski ayarla cihazın artık yanıt vermediği kontrol edilir.
 5. Cihaz yeni ayarla yanıt vermezse önce eski ayarla denenir, o da olmazsa bilinen tüm adres/baud/parity
    kombinasyonlarında aranır (kurtarma araması) ve bulunduğu ayar rapora yazılır.

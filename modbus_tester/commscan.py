@@ -26,6 +26,7 @@ class ScanOptions:
     verify_retries: int = 3
     functional_check: bool = True    # yeni ayarla blok okuma + yazma/geri okuma
     functional_regs: int = 10
+    func_addresses: str = ""       # fonksiyon testi adresleri (virgulle, en fazla 10); bos = ilk 10 R/W
     check_old_silent: bool = False   # eski ayarla cihaz artik yanit vermemeli
     recovery_search: bool = True
     restore: bool = True
@@ -131,9 +132,8 @@ class CommScanner:
         self.cur = start.copy()
         self.run = ScanRun(start_settings=start.to_dict(), options=asdict(opts), params=params,
                            started=time.strftime("%Y-%m-%d %H:%M:%S"))
-        self.func_regs = [r for r in regs if r.readable and not r.skip][: max(1, opts.functional_regs)]
-        self.func_rw = next((r for r in regs if r.access == "RW" and not r.comm_param and not r.skip
-                             and r.min is not None and r.max is not None and r.words == 1), None)
+        self.func_regs, self.func_warn = self.pick_func_regs(regs, opts.func_addresses)
+        self.run.options["fonksiyon_testi_adresleri"] = ", ".join(str(r.address) for r in self.func_regs)
 
     # ---- yardimcilar
     def pa(self, addr: int) -> int:
@@ -150,39 +150,64 @@ class CommScanner:
         except ModbusError:
             return None
 
-    def functional(self) -> (str, str):
-        notes = []
-        st = OK
-        # bitisik olanlari blok halinde oku
-        try:
-            groups = []
-            for r in self.func_regs:
-                if groups and r.address == groups[-1][-1].address + groups[-1][-1].words and (r.access == "R") == (groups[-1][-1].access == "R"):
-                    groups[-1].append(r)
-                else:
-                    groups.append([r])
-            for g in groups:
-                n = sum(r.words for r in g)
-                fc = self.o.read_fc if g[0].access == "R" else 3
-                self.client.read_registers(self.pa(g[0].address), n, function=fc)
-        except ModbusError as e:
-            st = FAIL
-            notes.append(f"okuma: {e}")
-        if self.func_rw is not None and st == OK:
-            r = self.func_rw
+    @staticmethod
+    def pick_func_regs(regs, text: str, limit: int = 10):
+        """Fonksiyon testinde kullanilacak registerlar: kullanicinin girdigi (en fazla 10) adres,
+        bos ise tablodaki ilk 10 R/W register (haberlesme ayarlari haric)."""
+        warn = []
+        by_addr = {r.address: r for r in regs}
+        addrs = []
+        for part in [x.strip() for x in str(text or "").replace(";", ",").replace(" ", ",").split(",") if x.strip()]:
             try:
-                # Mevcut deger geri yazilir: haberlesmeyi (FC06 + geri okuma) dogrular, cihazdaki ayari degistirmez
-                # ve tarih gibi birbirine bagli registerlarda gecersiz deger reddi olusmaz.
-                orig = self.client.read_registers(self.pa(r.address), 1)[0]
-                self.client.write_register(self.pa(r.address), orig)
-                back = self.client.read_registers(self.pa(r.address), 1)[0]
-                if back != orig:
-                    st = FAIL
-                    notes.append(f"{r.address} yaz/oku doğrulanamadı ({orig} yazıldı, {back} okundu)")
+                addrs.append(int(part, 0))
+            except ValueError:
+                warn.append(f"Geçersiz adres: {part}")
+        if addrs:
+            if len(addrs) > limit:
+                warn.append(f"En fazla {limit} adres kullanılır, ilk {limit} alındı")
+                addrs = addrs[:limit]
+            out = []
+            for a in addrs:
+                r = by_addr.get(a)
+                if r is None:
+                    r = Register(address=a, name="(tabloda yok)", access="RW")
+                out.append(r)
+            return out, warn
+        out = [r for r in regs if r.access == "RW" and not r.comm_param and not r.skip][:limit]
+        return out, warn
+
+    def functional(self) -> (str, str):
+        """Secilen her adreste: oku; R/W ise okunan (mevcut) degeri geri yaz ve tekrar okuyup karsilastir.
+        Mevcut deger yazildigi icin cihazin ayarlari degismez."""
+        bad = []
+        ok = 0
+        for r in self.func_regs:
+            fc = self.o.read_fc if r.access == "R" else 3
+            try:
+                cur = self.client.read_registers(self.pa(r.address), r.words, function=fc)
             except ModbusError as e:
-                st = FAIL
-                notes.append(f"yazma ({r.address} {r.name}): {e}")
-        return st, "; ".join(notes)
+                bad.append(f"{r.address} okuma: {e}")
+                continue
+            if r.access == "RW":
+                try:
+                    if r.words == 1:
+                        self.client.write_register(self.pa(r.address), cur[0])
+                    else:
+                        self.client.write_registers(self.pa(r.address), cur)
+                    back = self.client.read_registers(self.pa(r.address), r.words, function=3)
+                except ModbusError as e:
+                    bad.append(f"{r.address} yazma: {e}")
+                    continue
+                if back != cur:
+                    bad.append(f"{r.address} geri okuma farklı ({cur} yazıldı, {back} okundu)")
+                    continue
+            ok += 1
+        n = len(self.func_regs)
+        note = f"Fonksiyon testi: {ok}/{n} adres OK"
+        if bad:
+            note += " — " + "; ".join(bad[:5]) + (f" (+{len(bad) - 5})" if len(bad) > 5 else "")
+            return FAIL, note
+        return OK, note
 
     def recovery(self, target: LineSettings, prev: LineSettings, check_reg: int) -> Optional[LineSettings]:
         self.job.log("Kurtarma araması: cihaz bilinen ayar kombinasyonlarında aranıyor...")
@@ -288,7 +313,7 @@ class CommScanner:
             self.client.reconfigure(target)
             st.functional, n = self.functional()
             if n:
-                st.note += n
+                st.note += n + ". "
         vals = [st.verify, st.old_silent, st.functional]
         st.status = FAIL if FAIL in vals else WARN if WARN in vals else OK
         st.duration = round(time.time() - t0, 2)
@@ -330,6 +355,11 @@ class CommScanner:
                 if ov is not None and ov["setting"] != cur and p["kind"] != "stopbits":
                     job.log(f"  UYARI: register değeri bağlantı ayarı ({cur}) ile uyuşmuyor")
             self.connect(self.start)
+            for w in self.func_warn:
+                job.log("UYARI: " + w)
+            if self.o.functional_check:
+                job.log("Fonksiyon testi adresleri: " + ", ".join(str(r.address) for r in self.func_regs)
+                        + ("" if self.o.func_addresses.strip() else " (tablodaki ilk 10 R/W register)"))
 
             plan: List[tuple] = []
             if self.o.mode == "matrix":

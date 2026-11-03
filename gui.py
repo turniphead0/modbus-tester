@@ -306,7 +306,7 @@ class App(tk.Tk):
             "verify_retries": tk.StringVar(value="3"), "apply_register": tk.StringVar(value=""),
             "functional_check": tk.BooleanVar(value=True), "check_old_silent": tk.BooleanVar(value=False),
             "recovery_search": tk.BooleanVar(value=True), "restore": tk.BooleanVar(value=True),
-            "parity_none_2stop": tk.BooleanVar(value=False),
+            "parity_none_2stop": tk.BooleanVar(value=False), "func_addresses": tk.StringVar(value=""),
         }
         s = self.s
         g = ttk.LabelFrame(t, text=" Seçenekler ", padding=8)
@@ -315,6 +315,14 @@ class App(tk.Tk):
         self._opt_entry(g, "Ayar sonrası bekleme (ms)", s["settle_ms"], 1, 0)
         self._opt_entry(g, "Doğrulama deneme sayısı", s["verify_retries"], 2, 0)
         self._opt_entry(g, "Ayarı uygulama registerı (örn. 17130=1)", s["apply_register"], 3, 0)
+        fa = ttk.Frame(g)
+        fa.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        ttk.Label(fa, text="Fonksiyon testi adresleri (en fazla 10, virgülle):", width=44).pack(side="left")
+        ttk.Entry(fa, textvariable=s["func_addresses"], width=60).pack(side="left", fill="x", expand=True)
+        self.lbl_func = ttk.Label(g, text="Boş bırakılırsa tablodaki ilk 10 R/W register kullanılır. Her ayar değişikliğinden sonra bu "
+                                          "adresler okunur; R/W olanlara mevcut değer geri yazılıp tekrar okunarak doğrulanır.",
+                                  foreground="#666", wraplength=850)
+        self.lbl_func.grid(row=6, column=0, columnspan=2, sticky="w")
         self._opt_check(g, "Her ayarda fonksiyon testi", s["functional_check"], 0, 1)
         self._opt_check(g, "Eski ayarla yanıt vermediğini kontrol et", s["check_old_silent"], 1, 1)
         self._opt_check(g, "Cihaz kaybolursa bilinen ayarlarda ara", s["recovery_search"], 2, 1)
@@ -1081,6 +1089,7 @@ class App(tk.Tk):
                 functional_check=s["functional_check"].get(), check_old_silent=s["check_old_silent"].get(),
                 recovery_search=s["recovery_search"].get(), restore=s["restore"].get(),
                 parity_none_2stop=s["parity_none_2stop"].get(), apply_register=s["apply_register"].get().strip(),
+                func_addresses=s["func_addresses"].get().strip(),
                 address_offset=self._int(self.o["address_offset"], "Adres ofseti"),
                 read_fc=4 if self.o["read_fc"].get().startswith("FC04") else 3)
         except ValueError as e:
