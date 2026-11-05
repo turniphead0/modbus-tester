@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+import struct
 import threading
 import time
 import tkinter as tk
@@ -26,6 +27,7 @@ from modbus_tester.tester import TestOptions, run_register_test, summarize, make
 from modbus_tester.commscan import ScanOptions, run_comm_scan, expand_params, plan_size  # noqa: E402
 from modbus_tester.jobs import Job  # noqa: E402
 from modbus_tester.report import write_reports, values_text  # noqa: E402
+from modbus_tester import valuefmt as vf  # noqa: E402
 
 APP_NAME = "Modbus Cihaz Test Aracı"
 SCAN_MODES = {
@@ -392,7 +394,8 @@ class App(tk.Tk):
         top = ttk.Frame(t)
         top.pack(fill="x", pady=(0, 4))
         ttk.Button(top, text="Seçilileri oku", command=lambda: self.manual_read(selected=True)).pack(side="left")
-        ttk.Button(top, text="Tümünü oku", command=lambda: self.manual_read(selected=False)).pack(side="left", padx=4)
+        ttk.Button(top, text="Tümünü oku", command=lambda: (self.manual_read(selected=False),
+                                                            self.man_nb.select(1))).pack(side="left", padx=4)
         self.v_mpoll = tk.BooleanVar(value=False)
         ttk.Checkbutton(top, text="Sürekli oku, her", variable=self.v_mpoll, command=self.manual_poll_toggle).pack(side="left", padx=(12, 2))
         self.v_mpoll_ms = tk.StringVar(value="1000")
@@ -401,7 +404,22 @@ class App(tk.Tk):
         self.v_mfilter = tk.StringVar()
         ttk.Label(top, text="Ara:").pack(side="left", padx=(16, 2))
         ttk.Entry(top, textvariable=self.v_mfilter, width=20).pack(side="left")
-        self.v_mfilter.trace_add("write", lambda *a: self.render_manual())
+        self.v_mfilter.trace_add("write", lambda *a: (self.render_manual(), self._vals_dirty()))
+
+        ff = ttk.LabelFrame(t, text=" Değer formatı (okuma ve yazmada kullanılır) ", padding=6)
+        ff.pack(fill="x", pady=(0, 4))
+        self.v_mtype = tk.StringVar(value=vf.TABLE_TYPE)
+        self.v_mbase = tk.StringVar(value=vf.BASES[0])
+        self.v_mword = tk.StringVar(value=vf.WORD_ORDERS[0])
+        ttk.Label(ff, text="Veri tipi:").pack(side="left")
+        ttk.Combobox(ff, textvariable=self.v_mtype, values=vf.TYPES, state="readonly", width=17).pack(side="left", padx=(2, 12))
+        ttk.Label(ff, text="Gösterim:").pack(side="left")
+        ttk.Combobox(ff, textvariable=self.v_mbase, values=vf.BASES, state="readonly", width=9).pack(side="left", padx=(2, 12))
+        ttk.Label(ff, text="Word sırası (32/64 bit):").pack(side="left")
+        ttk.Combobox(ff, textvariable=self.v_mword, values=vf.WORD_ORDERS, state="readonly", width=17).pack(side="left", padx=2)
+        ttk.Label(ff, text="(0x.. / 0b.. yazılabilir)", foreground="#666").pack(side="left", padx=4)
+        for v in (self.v_mtype, self.v_mbase, self.v_mword):
+            v.trace_add("write", lambda *a: self._man_refresh_all())
 
         wr = ttk.LabelFrame(t, text=" Seçili registera yaz ", padding=6)
         wr.pack(fill="x", pady=(0, 4))
@@ -433,10 +451,36 @@ class App(tk.Tk):
         ttk.Button(raw, text="Yaz", command=self.raw_write).pack(side="left", padx=4)
         ttk.Label(raw, text="(virgülle; tek değer FC06, çok değer FC16)", foreground="#666").pack(side="left")
 
+        mnb = ttk.Notebook(t)
+        mnb.pack(fill="both", expand=True)
+        self.man_nb = mnb
+        left = ttk.Frame(mnb, padding=2)
+        right = ttk.Frame(mnb, padding=4)
+        mnb.add(left, text="  Tüm registerlar (seçim / ayrıntı)  ")
+        mnb.add(right, text="  Okunan değerler (okunaklı tablo)  ")
         cols = ("address", "hex", "name", "access", "min", "max", "value", "raw", "time", "status")
         heads = ("Address", "Hex", "Designation", "R/W", "Min", "Max", "Değer", "Ham", "Zaman", "Son işlem")
-        widths = (70, 60, 230, 50, 55, 55, 80, 120, 70, 420)
-        self.tv_man = self._tree(t, cols, heads, widths)
+        widths = (65, 55, 230, 45, 55, 55, 90, 110, 65, 420)
+        self.tv_man = self._tree(left, cols, heads, widths)
+        vb = ttk.Frame(right)
+        vb.pack(fill="x", pady=(0, 4))
+        self.lbl_mvals = ttk.Label(vb, text="Henüz okuma yok")
+        self.lbl_mvals.pack(side="left")
+        ttk.Button(vb, text="Excel'e kaydet", command=self.manual_export).pack(side="right")
+        ttk.Button(vb, text="Temizle", command=self.manual_clear).pack(side="right", padx=4)
+        style = ttk.Style(self)
+        style.configure("Vals.Treeview", rowheight=26, font=("Segoe UI", 10))
+        style.configure("Vals.Treeview.Heading", font=("Segoe UI", 10, "bold"))
+        vcols = ("address", "name", "value", "unit", "meaning", "type", "raw")
+        vheads = ("Register", "Ad", "Değer", "Birim", "Anlamı", "Tip", "Ham (hex)")
+        vwidths = (80, 300, 140, 70, 200, 120, 130)
+        self.tv_vals = self._tree(right, vcols, vheads, vwidths)
+        self.tv_vals.configure(style="Vals.Treeview")
+        self.tv_vals.column("value", anchor="e")
+        self.tv_vals.tag_configure("odd", background="#f4f6fa")
+        self.tv_vals.bind("<<TreeviewSelect>>", self._vals_select)
+        self.tv_vals.bind("<Double-1>", self._vals_pick)
+        self._mvals_after = None
         self.tv_man.bind("<<TreeviewSelect>>", self.manual_select)
         self.tv_man.bind("<Double-1>", self.manual_pick)
         self.man_state = {}   # addr -> dict(value, raw, time, status, tag)
@@ -458,9 +502,24 @@ class App(tk.Tk):
             st = self.man_state.get(r.address, {})
             tv.insert("", "end", iid=str(r.address), tags=(st.get("tag", ""),), values=self._man_row(r, st))
 
+    def _mfmt(self):
+        return self.v_mtype.get(), self.v_mbase.get(), vf.word_order(self.v_mword.get(), self.o["word_order_big"].get())
+
+    def _man_value(self, r, st):
+        """(metin, sayisal) — saklanan ham wordlerden, secili formata gore."""
+        w = st.get("words")
+        if not w:
+            return "", None
+        typ, base, big = self._mfmt()
+        try:
+            return vf.decode_display(r, w, typ, base, big)
+        except Exception as e:  # noqa: BLE001
+            return f"(çözülemedi: {e})", None
+
     def _man_row(self, r, st):
+        val = self._man_value(r, st)[0]
         return (r.address, r.hex, r.name, {"RW": "R/W"}.get(r.access, r.access or "-"), self._fv(r.min), self._fv(r.max),
-                st.get("value", ""), st.get("raw", ""), st.get("time", ""), st.get("status", ""))
+                val, st.get("raw", ""), st.get("time", ""), st.get("status", ""))
 
     def _man_set(self, r, **kw):
         st = self.man_state.setdefault(r.address, {})
@@ -469,6 +528,101 @@ class App(tk.Tk):
         iid = str(r.address)
         if self.tv_man.exists(iid):
             self.tv_man.item(iid, values=self._man_row(r, st), tags=(st.get("tag", ""),))
+        self._vals_dirty()
+
+    def _man_refresh_all(self):
+        for r in self.regs:
+            st = self.man_state.get(r.address)
+            if st and self.tv_man.exists(str(r.address)):
+                self.tv_man.item(str(r.address), values=self._man_row(r, st))
+        self._vals_dirty()
+
+    def _vals_dirty(self):
+        if self._mvals_after is None:
+            self._mvals_after = self.after(150, self.render_vals)
+
+    def render_vals(self):
+        self._mvals_after = None
+        tv = self.tv_vals
+        sel = tv.selection()
+        tv.delete(*tv.get_children())
+        typ = self.v_mtype.get()
+        q = self.v_mfilter.get().lower().strip()
+        n = 0
+        sec = None
+        for r in self.regs:
+            st = self.man_state.get(r.address)
+            if not st or not st.get("words"):
+                continue
+            if q and q not in f"{r.address} {r.hex} {r.name} {r.section}".lower():
+                continue
+            if r.section != sec:
+                sec = r.section
+                tv.insert("", "end", iid=f"vsec_{r.address}", values=("", sec or ""), tags=("sec",))
+            txt, num = self._man_value(r, st)
+            tag = st.get("tag", "")
+            tags = (tag,) if tag in ("warn", "fail") else (("odd",) if n % 2 else ())
+            tv.insert("", "end", iid=f"v{r.address}", tags=tags, values=(
+                r.address, r.name, txt, r.unit, vf.meaning(r, num), vf.type_label(r, typ), st.get("raw", "")))
+            n += 1
+        for i in sel:
+            if tv.exists(i):
+                tv.selection_add(i)
+        self.lbl_mvals.configure(text=f"{n} register okundu" if n else "Henüz okuma yok")
+
+    def _vals_select(self, ev=None):
+        sel = [i[1:] for i in self.tv_vals.selection() if i.startswith("v") and not i.startswith("vsec")]
+        if sel and self.tv_man.exists(sel[0]):
+            self.tv_man.selection_set([i for i in sel if self.tv_man.exists(i)])
+            self.tv_man.see(sel[0])
+
+    def _vals_pick(self, ev):
+        iid = self.tv_vals.identify_row(ev.y)
+        if iid.startswith("v") and not iid.startswith("vsec"):
+            r = self._reg(iid[1:])
+            if r:
+                self.tv_man.selection_set(iid[1:])
+                self.v_mval.set(self._man_value(r, self.man_state.get(r.address, {}))[0])
+
+    def manual_clear(self):
+        self.man_state.clear()
+        self.render_manual()
+        self.render_vals()
+
+    def manual_export(self):
+        rows = [(r, self.man_state[r.address]) for r in self.regs
+                if r.address in self.man_state and self.man_state[r.address].get("words")]
+        if not rows:
+            messagebox.showinfo(APP_NAME, "Kaydedilecek okuma yok.")
+            return
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill
+        typ = self.v_mtype.get()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Okunan Değerler"
+        ws.append([f"Manuel okuma — {time.strftime('%Y-%m-%d %H:%M:%S')} — {self.table_name}"])
+        ws["A1"].font = Font(bold=True, size=13)
+        ws.append([f"Veri tipi: {typ}   Gösterim: {self.v_mbase.get()}   Word sırası: {self.v_mword.get()}"])
+        hdr = ["Bölüm", "Register", "Hex", "Ad", "R/W", "Min", "Max", "Değer", "Birim", "Anlamı", "Tip", "Ham (hex)", "Zaman", "Son işlem"]
+        ws.append(hdr)
+        for c in ws[3]:
+            c.font = Font(bold=True, color="FFFFFF")
+            c.fill = PatternFill("solid", fgColor="1F3864")
+        for r, st in rows:
+            txt, num = self._man_value(r, st)
+            val = num if (num is not None and self.v_mbase.get() == vf.BASES[0]) else txt
+            ws.append([r.section, r.address, r.hex, r.name, {"RW": "R/W"}.get(r.access, r.access), self._fv(r.min),
+                       self._fv(r.max), val, r.unit, vf.meaning(r, num), vf.type_label(r, typ), st.get("raw", ""),
+                       st.get("time", ""), st.get("status", "")])
+        for col, w in zip("ABCDEFGHIJKLMN", (22, 9, 8, 30, 5, 8, 8, 14, 8, 16, 14, 18, 9, 50)):
+            ws.column_dimensions[col].width = w
+        ws.freeze_panes = "A4"
+        os.makedirs(report_dir(), exist_ok=True)
+        path = os.path.join(report_dir(), f"manuel_okuma_{time.strftime('%Y%m%d_%H%M%S')}.xlsx")
+        wb.save(path)
+        self._log_manual(f"Okunan değerler kaydedildi: {path}")
+        messagebox.showinfo(APP_NAME, f"Kaydedildi:\n{path}")
 
     def manual_select(self, ev=None):
         sel = [self._reg(i) for i in self.tv_man.selection()]
@@ -484,7 +638,7 @@ class App(tk.Tk):
         iid = self.tv_man.identify_row(ev.y)
         r = self._reg(iid) if iid else None
         if r:
-            self.v_mval.set(self.man_state.get(r.address, {}).get("value", ""))
+            self.v_mval.set(self._man_value(r, self.man_state.get(r.address, {}))[0])
 
     def _manual_ctx(self):
         if self.busy():
@@ -544,8 +698,23 @@ class App(tk.Tk):
             vis = set(self.tv_man.get_children())
             regs = [r for r in self.regs if str(r.address) in vis]
         regs = [r for r in regs if r.readable]
+        typ = self.v_mtype.get()
+        big = vf.word_order(self.v_mword.get(), self.o["word_order_big"].get())
+        typed = {r.address: vf.typed_register(r, typ) for r in regs}
 
         def fn(c, fc, off, wob):
+            wob = big
+            if typ != vf.TABLE_TYPE:
+                # secilen tipin word sayisi tablodan farkli olabilir: tek tek oku
+                for r in regs:
+                    t = typed[r.address]
+                    f1 = fc if r.access == "R" else 3
+                    try:
+                        w = c.read_registers(r.address - off, t.words, function=f1)
+                        self._post(self._man_ok_read, r, w, wob, f"Okuma FC{f1:02d} ({t.fmt})")
+                    except ModbusError as e:
+                        self._post(self._man_set, r, status=f"Okuma hatası: {e}", tag="fail")
+                return
             groups = make_groups(regs, lambda r: True, 100)
             for g in groups:
                 fcg = fc if g[0].access == "R" else 3
@@ -571,13 +740,14 @@ class App(tk.Tk):
         self._run_manual(fn)
 
     def _man_ok_read(self, r, w, wob, how):
-        v = decode_value(r, w, wob)
         tag = "ok"
         note = how
-        if (r.min is not None and v < r.min) or (r.max is not None and v > r.max):
-            tag = "warn"
-            note += " - Min/Max dışında"
-        self._man_set(r, value=fmt_value(v), raw=" ".join(f"0x{x:04X}" for x in w), status=note, tag=tag)
+        if self.v_mtype.get() == vf.TABLE_TYPE and len(w) == r.words and r.fmt != "ASCII":
+            v = decode_value(r, w, wob)
+            if (r.min is not None and v < r.min) or (r.max is not None and v > r.max):
+                tag = "warn"
+                note += " - Min/Max dışında"
+        self._man_set(r, words=list(w), raw=" ".join(f"{x:04X}" for x in w), status=note, tag=tag)
 
     def _parse_value(self, txt):
         t = txt.strip().replace(",", ".")
@@ -591,41 +761,50 @@ class App(tk.Tk):
         if not regs:
             messagebox.showinfo(APP_NAME, "Yazmak için listeden register seçin.")
             return
+        typ = self.v_mtype.get()
+        big = vf.word_order(self.v_mword.get(), self.o["word_order_big"].get())
+        enc = {}
         try:
-            v = self._parse_value(self.v_mval.get())
-        except ValueError:
-            messagebox.showwarning(APP_NAME, "Değer sayı olmalı (örn. 12, -5, 0x1A)")
+            for r in regs:
+                enc[r.address] = vf.encode_input(r, self.v_mval.get(), typ, big)
+        except (ValueError, struct.error) as e:
+            messagebox.showwarning(APP_NAME, f"Değer seçilen formata uymuyor ({typ}): {e}\nÖrnek: 12, -5, 3.14, 0x1A, 0b1010")
             return
+        v = next(iter(enc.values()))[1]
         ro = [r for r in regs if r.access == "R"]
         if ro and not messagebox.askyesno(APP_NAME, f"{len(ro)} register tabloda salt okunur (R). Yine de yazılsın mı?"):
             return
-        out = [r for r in regs if (r.min is not None and v < r.min) or (r.max is not None and v > r.max)]
+        out = [r for r in regs if v is not None and typ == vf.TABLE_TYPE
+               and ((r.min is not None and v < r.min) or (r.max is not None and v > r.max))]
         if out and not messagebox.askyesno(APP_NAME, "Değer tablodaki Min/Max dışında. Yine de yazılsın mı?"):
             return
         use16 = self.v_mfc16.get()
 
+        txtv = self.v_mval.get().strip()
+
         def fn(c, fc, off, wob):
             for r in regs:
-                words = encode_value(r, v, wob)
+                words = enc[r.address][0]
                 try:
-                    if r.words == 1 and not use16:
+                    if len(words) == 1 and not use16:
                         c.write_register(r.address - off, words[0])
                         how = "FC06"
                     else:
                         c.write_registers(r.address - off, words)
                         how = "FC16"
                 except ModbusError as e:
-                    self._post(self._man_set, r, status=f"Yazma {fmt_value(v)} reddedildi: {e}", tag="fail")
+                    self._post(self._man_set, r, status=f"Yazma {txtv} reddedildi: {e}", tag="fail")
                     continue
                 try:
-                    back = c.read_registers(r.address - off, r.words, function=fc if r.access == "R" else 3)
+                    back = c.read_registers(r.address - off, len(words), function=fc if r.access == "R" else 3)
                 except ModbusError as e:
-                    self._post(self._man_set, r, status=f"{how} {fmt_value(v)} yazıldı, geri okuma hatası: {e}", tag="warn")
+                    self._post(self._man_set, r, status=f"{how} {txtv} yazıldı, geri okuma hatası: {e}", tag="warn")
                     continue
-                bv = decode_value(r, back, wob)
                 ok = back == words
-                self._post(self._man_set, r, value=fmt_value(bv), raw=" ".join(f"0x{x:04X}" for x in back),
-                           status=(f"{how} {fmt_value(v)} yazıldı, geri okundu: " + ("doğrulandı" if ok else f"FARKLI ({fmt_value(bv)})")),
+                hexw = " ".join(f"{x:04X}" for x in back)
+                self._post(self._man_set, r, words=list(back), raw=hexw,
+                           status=(f"{how} {txtv} yazıldı ({' '.join(f'{x:04X}' for x in words)}), geri okundu: "
+                                   + ("doğrulandı" if ok else f"FARKLI ({hexw})")),
                            tag="ok" if ok else "fail")
         self._run_manual(fn)
 
