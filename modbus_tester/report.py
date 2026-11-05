@@ -228,11 +228,88 @@ def register_report_csv(run: dict, regs: List[dict], path: str):
 # --------------------------------------------------------------------------
 # Ayar tarama raporu
 # --------------------------------------------------------------------------
-SCAN_COLS = [("no", "#"), ("purpose", "Amaç"), ("param", "Parametre"), ("register", "Register"), ("raw", "Yazılan Ham Değer"),
+SCAN_COLS = [("no", "#"), ("purpose", "Amaç"), ("combo", "Kombinasyon"), ("param", "Parametre"), ("register", "Register"), ("raw", "Yazılan Ham Değer"),
              ("setting", "Ayar"), ("from_settings", "Önceki Hat Ayarı"), ("to_settings", "Yeni Hat Ayarı"),
              ("write_resp", "Yazma Yanıtı"), ("verify", "Yeni Ayarla Doğrulama"), ("old_silent", "Eski Ayar Sessiz"),
              ("functional", "Fonksiyon Testi"), ("status", "SONUÇ"), ("duration", "Süre (sn)"), ("note", "Açıklama")]
 SCAN_STATUS = {"verify", "old_silent", "functional", "status"}
+
+
+def values_text(values) -> str:
+    """Deger listesini kisa yaz: ardisik adresler '1-247' bicimine indirilir."""
+    out, i = [], 0
+    vs = list(values)
+    while i < len(vs):
+        j = i
+        while (j + 1 < len(vs) and vs[j + 1]["raw"] == vs[j]["raw"] + 1 and vs[j]["raw"] == vs[j]["setting"]
+               and vs[j + 1]["raw"] == vs[j + 1]["setting"]):
+            j += 1
+        if j - i >= 3:
+            out.append(f"{vs[i]['raw']}-{vs[j]['raw']}")
+        else:
+            out.extend(f"{v['raw']}={v['setting']}" for v in vs[i:j + 1])
+        i = j + 1
+    return ", ".join(out)
+
+
+def _combo_sheets(wb, run: dict, border):
+    """Tum kombinasyon modunda: kombinasyon listesi ve adres x (hiz/parity) sonuc matrisi."""
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+    combos = [st for st in run["steps"] if st.get("combo")]
+    if not combos:
+        return
+    ws = wb.create_sheet("Kombinasyonlar")
+    keys = list(combos[0].get("combo_values", {}).keys())
+    hdr = ["#"] + keys + ["SONUÇ", "Açıklama"]
+    ws.append(hdr)
+    for c in ws[1]:
+        c.font = Font(bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor="1F3864")
+    for st in combos:
+        cv = st.get("combo_values", {})
+        ws.append([st["combo"]] + [cv.get(k, "") for k in keys] + [st["status"], st.get("note", "")])
+        c = ws.cell(ws.max_row, len(keys) + 2)
+        if st["status"] in COLORS:
+            c.fill = PatternFill("solid", fgColor=COLORS[st["status"]])
+            c.font = Font(color=FONT_COLORS[st["status"]], bold=True)
+    for i in range(1, len(hdr) + 1):
+        ws.column_dimensions[get_column_letter(i)].width = 12
+    ws.column_dimensions[get_column_letter(len(hdr))].width = 90
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    if len(keys) < 2:
+        return
+    # matris: satir = ilk parametre (genelde adres), sutun = diger parametrelerin birlesimi
+    ws = wb.create_sheet("Kombinasyon Matrisi")
+    rows, cols, cell = [], [], {}
+    for st in combos:
+        cv = st.get("combo_values", {})
+        rk = cv.get(keys[0], "")
+        ck = " / ".join(str(cv.get(k, "")) for k in keys[1:])
+        if rk not in rows:
+            rows.append(rk)
+        if ck not in cols:
+            cols.append(ck)
+        cell[(rk, ck)] = st["status"]
+    ws.cell(1, 1, f"{keys[0]} \\ " + " / ".join(keys[1:])).font = Font(bold=True)
+    for j, ck in enumerate(cols, 2):
+        c = ws.cell(1, j, ck)
+        c.font = Font(bold=True)
+        c.alignment = Alignment(horizontal="center", wrap_text=True)
+        ws.column_dimensions[get_column_letter(j)].width = 14
+    for i, rk in enumerate(rows, 2):
+        ws.cell(i, 1, rk).font = Font(bold=True)
+        for j, ck in enumerate(cols, 2):
+            v = cell.get((rk, ck), "")
+            c = ws.cell(i, j, v)
+            c.border = border
+            c.alignment = Alignment(horizontal="center")
+            if v in COLORS:
+                c.fill = PatternFill("solid", fgColor=COLORS[v])
+                c.font = Font(color=FONT_COLORS[v])
+    ws.column_dimensions["A"].width = 16
+    ws.freeze_panes = "B2"
 
 
 def scan_report_xlsx(run: dict, path: str, title: str = ""):
@@ -267,15 +344,16 @@ def scan_report_xlsx(run: dict, path: str, title: str = ""):
             if k in SCAN_STATUS and v in COLORS:
                 c.fill = PatternFill("solid", fgColor=COLORS[v])
                 c.font = Font(color=FONT_COLORS[v], bold=k == "status")
-    widths = [4, 10, 13, 9, 9, 9, 16, 16, 22, 11, 10, 10, 9, 8, 70]
+    widths = [5, 10, 11, 13, 9, 9, 9, 16, 16, 22, 11, 10, 10, 9, 8, 70]
     for i, wdt in enumerate(widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = wdt
     ws.freeze_panes = f"A{hr + 1}"
+    _combo_sheets(wb, run, border)
     ws2 = wb.create_sheet("Parametreler")
     ws2.append(["Parametre", "Register", "Orijinal Ham Değer", "Test Değerleri (ham=ayar)"])
     for p in run["params"]:
         ws2.append([p["kind"], p["register"], run["original"].get(p["kind"], ""),
-                    ", ".join(f"{v['raw']}={v['setting']}" for v in p["values"]) + ("" if p.get("enabled", True) else " (devre dışı)")])
+                    values_text(p["values"]) + ("" if p.get("enabled", True) else " (devre dışı)")])
     ws2.append([])
     for k, v in run["options"].items():
         ws2.append([k, str(v)])
@@ -299,7 +377,7 @@ def scan_report_html(run: dict, path: str, title: str = ""):
     o.write("<table style='width:auto;margin-bottom:10px'><tr><th>Parametre</th><th>Register</th><th>Orijinal</th><th>Test değerleri (ham=ayar)</th></tr>")
     for p in run["params"]:
         o.write(f"<tr><td>{e(p['kind'])}</td><td>{p['register']}</td><td>{e(str(run['original'].get(p['kind'], '')))}</td><td>"
-                + e(", ".join(f"{v['raw']}={v['setting']}" for v in p["values"])) + ("" if p.get("enabled", True) else " (devre dışı)") + "</td></tr>")
+                + e(values_text(p["values"])) + ("" if p.get("enabled", True) else " (devre dışı)") + "</td></tr>")
     o.write("</table><table><thead><tr>" + "".join(f"<th>{e(l)}</th>" for _, l in SCAN_COLS) + "</tr></thead><tbody>")
     for st in run["steps"]:
         o.write("<tr>" + "".join(

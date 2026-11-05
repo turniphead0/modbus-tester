@@ -23,11 +23,16 @@ from modbus_tester.table import load_table, save_csv, default_comm_config, encod
 from modbus_tester.rtu import LineSettings, ModbusClient, ModbusError  # noqa: E402
 from modbus_tester.simulator import SimDevice  # noqa: E402
 from modbus_tester.tester import TestOptions, run_register_test, summarize, make_groups  # noqa: E402
-from modbus_tester.commscan import ScanOptions, run_comm_scan  # noqa: E402
+from modbus_tester.commscan import ScanOptions, run_comm_scan, expand_params, plan_size  # noqa: E402
 from modbus_tester.jobs import Job  # noqa: E402
-from modbus_tester.report import write_reports  # noqa: E402
+from modbus_tester.report import write_reports, values_text  # noqa: E402
 
 APP_NAME = "Modbus Cihaz Test Aracı"
+SCAN_MODES = {
+    "Sıralı (her parametre tek tek)": "sequential",
+    "Tüm kombinasyonlar": "matrix",
+    "Tam test (tüm adres × hız × parity kombinasyonları)": "full",
+}
 
 
 def app_version() -> str:
@@ -318,11 +323,12 @@ class App(tk.Tk):
             "functional_check": tk.BooleanVar(value=True), "check_old_silent": tk.BooleanVar(value=False),
             "recovery_search": tk.BooleanVar(value=True), "restore": tk.BooleanVar(value=True),
             "parity_none_2stop": tk.BooleanVar(value=False), "func_addresses": tk.StringVar(value=""),
+            "all_addresses": tk.BooleanVar(value=False), "all_bauds": tk.BooleanVar(value=False),
         }
         s = self.s
         g = ttk.LabelFrame(t, text=" Seçenekler ", padding=8)
         g.pack(fill="x")
-        self._opt_entry(g, "Mod", s["mode"], 0, 0, ["Sıralı (her parametre tek tek)", "Tüm kombinasyonlar"])
+        self._opt_entry(g, "Mod", s["mode"], 0, 0, list(SCAN_MODES))
         self._opt_entry(g, "Ayar sonrası bekleme (ms)", s["settle_ms"], 1, 0)
         self._opt_entry(g, "Doğrulama deneme sayısı", s["verify_retries"], 2, 0)
         self._opt_entry(g, "Ayarı uygulama registerı (örn. 17130=1)", s["apply_register"], 3, 0)
@@ -339,6 +345,16 @@ class App(tk.Tk):
         self._opt_check(g, "Cihaz kaybolursa bilinen ayarlarda ara", s["recovery_search"], 2, 1)
         self._opt_check(g, "Sonunda orijinal ayarlara dön", s["restore"], 3, 1)
         self._opt_check(g, "Parity None iken 2 stop bit", s["parity_none_2stop"], 4, 1)
+        fx = ttk.Frame(g)
+        fx.grid(row=7, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        ttk.Checkbutton(fx, text="Tüm Modbus adreslerinde test et (tablodaki Min–Max, örn. 1–247)",
+                        variable=s["all_addresses"]).pack(side="left", padx=(0, 16))
+        ttk.Checkbutton(fx, text="Tüm baud hızlarında test et (tablodaki tüm seçenekler)",
+                        variable=s["all_bauds"]).pack(side="left")
+        ttk.Label(g, text="'Tam test' modu bu iki seçeneği otomatik açar ve adres × hız × parity'nin bütün kombinasyonlarını "
+                          "tek tek kurup doğrular. Adres değerlerine aralık da yazabilirsiniz (örn. 1-247). Başlamadan önce "
+                          "adım sayısı ve tahmini süre gösterilir.", foreground="#666", wraplength=760).grid(
+            row=8, column=0, columnspan=2, sticky="w")
         b = ttk.Frame(t)
         b.pack(fill="x", pady=(8, 0))
         self.v_title2 = tk.StringVar()
@@ -970,7 +986,7 @@ class App(tk.Tk):
             fr.pack(fill="x", pady=1)
             ve = tk.BooleanVar(value=p.get("enabled", True))
             vr = tk.StringVar(value=str(p["register"]))
-            vv = tk.StringVar(value=", ".join(f"{v['raw']}={v['setting']}" for v in p["values"]))
+            vv = tk.StringVar(value=values_text(p["values"]))
             ttk.Checkbutton(fr, variable=ve, width=5).pack(side="left", padx=(6, 2))
             ttk.Label(fr, text=KIND_LABEL[p["kind"]], width=14).pack(side="left", padx=2)
             ttk.Entry(fr, textvariable=vr, width=10).pack(side="left", padx=2)
@@ -984,6 +1000,16 @@ class App(tk.Tk):
         for kind, ve, vr, vv, name in self.param_rows:
             vals = []
             for part in [x.strip() for x in vv.get().replace(";", ",").split(",") if x.strip()]:
+                if kind == "address" and "=" not in part and "-" in part.strip("-"):
+                    lo, _, hi = part.partition("-")
+                    try:
+                        lo, hi = int(lo), int(hi)
+                    except ValueError:
+                        raise ValueError(f"Adres aralığı geçersiz: '{part}' (örn. 1-247)")
+                    if not 1 <= lo <= hi <= 247:
+                        raise ValueError(f"Adres aralığı 1-247 içinde olmalı: '{part}'")
+                    vals.extend({"raw": v, "setting": v} for v in range(lo, hi + 1))
+                    continue
                 a, _, b = part.partition("=")
                 b = b.strip() or a.strip()
                 try:
@@ -1094,7 +1120,8 @@ class App(tk.Tk):
             params = self.collect_params()
             s = self.s
             opts = ScanOptions(
-                mode="matrix" if s["mode"].get().startswith("Tüm") else "sequential",
+                mode=SCAN_MODES.get(s["mode"].get(), "sequential"),
+                all_addresses=s["all_addresses"].get(), all_bauds=s["all_bauds"].get(),
                 settle_ms=self._int(s["settle_ms"], "Ayar sonrası bekleme", 0, 120000),
                 verify_retries=self._int(s["verify_retries"], "Doğrulama deneme sayısı", 1, 50),
                 functional_check=s["functional_check"].get(), check_old_silent=s["check_old_silent"].get(),
@@ -1114,7 +1141,18 @@ class App(tk.Tk):
         if ls.transport in ("tcp", "rtu_over_tcp") and any(p["kind"] != "address" for p in en):
             if not messagebox.askyesno(APP_NAME, "TCP bağlantısında baud/parity değişikliği doğrulanamaz. Yine de devam edilsin mi?"):
                 return
-        if not messagebox.askyesno(APP_NAME, "Ayar tarama modu cihazın haberleşme ayarlarını (adres/baud/parity...) değiştirecek.\nDevam edilsin mi?"):
+        exp = [p for p in expand_params(en, self.regs, opts) if p["enabled"] and p["values"]]
+        nsteps = plan_size(exp, ls, opts)
+        per = opts.settle_ms / 1000.0 + 0.4 + (1.5 if opts.functional_check else 0)
+        mins = int(nsteps * per / 60) + 1
+        dur = f"{mins // 60} sa {mins % 60} dk" if mins >= 60 else f"{mins} dk"
+        detail = " × ".join(f"{KIND_LABEL.get(p['kind'], p['kind'])} {len(p['values'])}" for p in exp)
+        ncombo = 1
+        for p in exp:
+            ncombo *= len(p["values"])
+        info = (f"Değerler: {detail}\n" + (f"Kombinasyon sayısı: {ncombo}\n" if opts.mode != "sequential" else "")
+                + f"Ayar değiştirme adımı: ~{nsteps}\nTahmini süre: ~{dur}\n\n")
+        if not messagebox.askyesno(APP_NAME, info + "Ayar tarama modu cihazın haberleşme ayarlarını (adres/baud/parity...) değiştirecek.\nDevam edilsin mi?"):
             return
         sim = self.get_sim(ls) if ls.transport == "sim" else None
         regs = self.regs
@@ -1223,7 +1261,7 @@ class App(tk.Tk):
                 rr.range_protect, rr.overall, " | ".join(rr.notes))
 
     def _scan_row(self, st):
-        return (st.no, st.purpose, st.param, st.register, st.raw, st.setting, st.from_settings, st.to_settings,
+        return (st.no, st.purpose + (f" {st.combo}" if st.combo else ""), st.param, st.register, st.raw, st.setting, st.from_settings, st.to_settings,
                 st.write_resp, st.verify, st.old_silent, st.functional, st.status, st.duration, st.note)
 
     def render_results(self):

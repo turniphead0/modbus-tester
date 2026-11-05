@@ -21,7 +21,9 @@ PARITY_LABEL = {"N": "None", "E": "Even", "O": "Odd"}
 
 @dataclass
 class ScanOptions:
-    mode: str = "sequential"         # sequential | matrix
+    mode: str = "sequential"         # sequential | matrix | full (tum adres x tum hiz x tum kombinasyon)
+    all_addresses: bool = False      # adres icin tablodaki Min..Max araligindaki TUM adresler (orn. 1..247)
+    all_bauds: bool = False          # baud icin tablodaki TUM hiz secenekleri
     settle_ms: int = 1500            # ayar yazildiktan sonra bekleme
     verify_retries: int = 3
     functional_check: bool = True    # yeni ayarla blok okuma + yazma/geri okuma
@@ -58,7 +60,9 @@ class ScanStep:
     setting: str
     from_settings: str
     to_settings: str
-    purpose: str = "test"           # test | geri donus
+    purpose: str = "test"           # test | geri donus | kontrol
+    combo: str = ""                 # tum kombinasyon modunda "k/N"
+    combo_values: dict = field(default_factory=dict)  # {parametre etiketi: ayar}
     write_resp: str = ""
     verify: str = NA
     old_silent: str = NA
@@ -86,6 +90,56 @@ class ScanRun:
                                             "original", "final_settings", "aborted", "summary")}
         d["steps"] = [asdict(s) for s in self.steps]
         return d
+
+
+def expand_params(params: List[dict], regs: List[Register], opts: ScanOptions) -> List[dict]:
+    """'Tum adresler' / 'tum hizlar' seceneklerine gore parametre deger listelerini genisletir."""
+    from .table import default_comm_config
+    full = opts.mode == "full"
+    defaults = {(d["kind"], int(d["register"])): d for d in default_comm_config(regs)}
+    by_addr = {r.address: r for r in regs}
+    out = []
+    for p in params:
+        p = dict(p)
+        kind = p["kind"]
+        if kind == "address" and (opts.all_addresses or full):
+            r = by_addr.get(int(p["register"]))
+            lo = int(r.min) if r is not None and r.min is not None else 1
+            hi = int(r.max) if r is not None and r.max is not None else 247
+            lo, hi = max(1, lo), min(247, hi)
+            if hi < lo:
+                lo, hi = 1, 247
+            p["values"] = [{"raw": v, "setting": v} for v in range(lo, hi + 1)]
+            p["enabled"] = True
+        elif kind == "baud" and (opts.all_bauds or full):
+            d = defaults.get((kind, int(p["register"])))
+            if d and d["values"]:
+                have = {v["raw"] for v in p.get("values", [])}
+                p["values"] = list(p.get("values", [])) + [v for v in d["values"] if v["raw"] not in have]
+                p["values"].sort(key=lambda v: v["raw"])
+            p["enabled"] = True
+        out.append(p)
+    return out
+
+
+def plan_size(params: List[dict], start: LineSettings, opts: ScanOptions) -> int:
+    """Yaklasik adim sayisi (ayar yazma adimlari, geri donus dahil)."""
+    ps = [p for p in params if p.get("enabled", True) and p.get("values")]
+    if not ps:
+        return 0
+    if opts.mode in ("matrix", "full"):
+        cur = [current_setting(start, p["kind"]) for p in ps]
+        n = 0
+        for combo in itertools.product(*[[v["setting"] for v in p["values"]] for p in ps]):
+            n += sum(1 for a, b in zip(cur, combo) if a != b)
+            cur = list(combo)
+        n += sum(1 for a, p in zip(cur, ps) if a != current_setting(start, p["kind"]))
+        return n
+    n = 0
+    for p in ps:
+        c = current_setting(start, p["kind"])
+        n += sum(1 for v in p["values"] if v["setting"] != c) + 1
+    return n
 
 
 def apply_setting(ls: LineSettings, kind: str, setting, opts: ScanOptions) -> LineSettings:
@@ -320,6 +374,27 @@ class CommScanner:
         self.job.log(f"  doğrulama={st.verify} fonksiyon={st.functional} -> {st.status}")
         return True
 
+    def check_current(self):
+        """Ayar degistirmeden mevcut kombinasyonu dogrula (kombinasyon zaten aktifse)."""
+        p = self.params[0]
+        st = ScanStep(no=len(self.run.steps) + 1, param="Kontrol (değişiklik yok)", register=int(p["register"]),
+                      raw=0, setting=self.cur.short(), from_settings=self.cur.short(), to_settings=self.cur.short(),
+                      purpose="kontrol")
+        self.run.steps.append(st)
+        t0 = time.time()
+        got = self.probe(self.cur, int(p["register"]), retries=max(0, self.o.verify_retries - 1))
+        st.raw = got if got is not None else 0
+        st.write_resp = "Yazma yok (kombinasyon zaten aktif)"
+        st.verify = OK if got is not None else FAIL
+        if self.o.functional_check and got is not None:
+            self.client.reconfigure(self.cur)
+            st.functional, n = self.functional()
+            st.note += n + ". "
+        vals = [st.verify, st.functional]
+        st.status = FAIL if FAIL in vals else WARN if WARN in vals else OK
+        st.duration = round(time.time() - t0, 2)
+        self.job.log(f"Adım {st.no}: mevcut kombinasyon {self.cur.short()} kontrolü -> {st.status}")
+
     def value_for(self, p: dict, setting) -> Optional[dict]:
         for v in p["values"]:
             if v["setting"] == setting:
@@ -362,7 +437,7 @@ class CommScanner:
                         + ("" if self.o.func_addresses.strip() else " (tablodaki ilk 10 R/W register)"))
 
             plan: List[tuple] = []
-            if self.o.mode == "matrix":
+            if self.o.mode in ("matrix", "full"):
                 combos = list(itertools.product(*[p["values"] for p in self.params]))
                 for combo in combos:
                     plan.append(("combo", combo))
@@ -376,15 +451,32 @@ class CommScanner:
                     if ov is not None:
                         plan.append(("restore", p, ov))
             total = max(1, len(plan))
-            job.set_phase(f"Ayar tarama ({'tüm kombinasyonlar' if self.o.mode == 'matrix' else 'sıralı'}): {total} adım")
+            job.set_phase(f"Ayar tarama ({ {'matrix': 'tüm kombinasyonlar', 'full': 'tam test'}.get(self.o.mode, 'sıralı')}): {total} plan adımı")
+            if self.o.mode in ("matrix", "full"):
+                job.log(f"Toplam {len(plan)} kombinasyon: " + " × ".join(
+                    f"{KIND_LABEL.get(p['kind'], p['kind'])} ({len(p['values'])})" for p in self.params))
             for i, item in enumerate(plan):
                 job.progress = i / total * 0.95
                 if item[0] == "combo":
+                    n0 = len(run.steps)
                     for p, v in zip(self.params, item[1]):
                         if current_setting(self.cur, p["kind"]) != v["setting"]:
                             if not self.step(p, v):
                                 run.aborted = "Cihazla bağlantı kayboldu"
                                 return run
+                    if len(run.steps) == n0:
+                        self.check_current()
+                    last = run.steps[-1]
+                    last.combo = f"{i + 1}/{total}"
+                    last.combo_values = {KIND_LABEL.get(p["kind"], p["kind"]): setting_label(p["kind"], v["setting"])
+                                         for p, v in zip(self.params, item[1])}
+                    want = self.cur.copy()
+                    for p, v in zip(self.params, item[1]):
+                        want = apply_setting(want, p["kind"], v["setting"], self.o)
+                    if self.cur.short() != want.short():
+                        last.note += f"Kombinasyon {want.short()} sağlanamadı (cihaz {self.cur.short()} ayarında). "
+                        if last.status == OK:
+                            last.status = FAIL
                 else:
                     p, v = item[1], item[2]
                     if item[0] == "restore" and current_setting(self.cur, p["kind"]) == v["setting"]:
@@ -418,6 +510,7 @@ class CommScanner:
 
 
 def run_comm_scan(job: Job, regs, start: LineSettings, params, opts: ScanOptions, sim_device=None) -> ScanRun:
+    params = expand_params(params, regs, opts)
     sc = CommScanner(job, regs, start, params, opts, sim_device)
     job.result = sc.run
     return sc.execute()
