@@ -11,7 +11,7 @@ import time
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional
 
-from .jobs import Job, OK, FAIL, WARN, SKIP, NA
+from .jobs import Job, Cancelled, OK, FAIL, WARN, SKIP, NA
 from .rtu import LineSettings, ModbusClient, ModbusError, ModbusException, NoResponse
 from .table import Register
 
@@ -187,9 +187,15 @@ class CommScanner:
         self.run = ScanRun(start_settings=start.to_dict(), options=asdict(opts), params=params,
                            started=time.strftime("%Y-%m-%d %H:%M:%S"))
         self.func_regs, self.func_warn = self.pick_func_regs(regs, opts.func_addresses)
+        self.read_only_func: Dict[int, str] = {}   # baslangicta yazmaya kapali bulunan fonksiyon registerlari
+        self.restoring = False
         self.run.options["fonksiyon_testi_adresleri"] = ", ".join(str(r.address) for r in self.func_regs)
 
     # ---- yardimcilar
+    def _check(self):
+        if not self.restoring:
+            self.job.check()
+
     def pa(self, addr: int) -> int:
         return addr - self.o.address_offset
 
@@ -242,7 +248,7 @@ class CommScanner:
             except ModbusError as e:
                 bad.append(f"{r.address} okuma: {e}")
                 continue
-            if r.access == "RW":
+            if r.access == "RW" and r.address not in self.read_only_func:
                 try:
                     if r.words == 1:
                         self.client.write_register(self.pa(r.address), cur[0])
@@ -258,10 +264,35 @@ class CommScanner:
             ok += 1
         n = len(self.func_regs)
         note = f"Fonksiyon testi: {ok}/{n} adres OK"
+        if self.read_only_func:
+            note += f" ({', '.join(str(a) for a in self.read_only_func)} yazmaya kapalı, sadece okundu)"
         if bad:
             note += " — " + "; ".join(bad[:5]) + (f" (+{len(bad) - 5})" if len(bad) > 5 else "")
             return FAIL, note
         return OK, note
+
+    def baseline_functional(self):
+        """Orijinal ayarda: mevcut degeri geri yazmayi reddeden registerlar (kosula bagli kilitli,
+        orn. DST Mode Manual degilken DST baslangic/bitis) fonksiyon testinde sadece okunur.
+        Boylece cihazin zaten reddettigi bir yazma, her adimda HATA olarak tekrarlanmaz."""
+        for r in self.func_regs:
+            if r.access != "RW":
+                continue
+            try:
+                cur = self.client.read_registers(self.pa(r.address), r.words, function=3)
+                if r.words == 1:
+                    self.client.write_register(self.pa(r.address), cur[0])
+                else:
+                    self.client.write_registers(self.pa(r.address), cur)
+            except ModbusException as e:
+                self.read_only_func[r.address] = str(e)
+            except ModbusError:
+                pass
+        if self.read_only_func:
+            self.job.log("UYARI: başlangıç ayarında mevcut değerin geri yazılmasını reddeden registerlar fonksiyon testinde "
+                         "sadece okunacak (cihazda şu an yazmaya kapalı): "
+                         + "; ".join(f"{a}: {e}" for a, e in self.read_only_func.items()))
+        self.run.options["fonksiyon_testi_sadece_okunan"] = ", ".join(str(a) for a in self.read_only_func)
 
     def recovery(self, target: LineSettings, prev: LineSettings, check_reg: int) -> Optional[LineSettings]:
         self.job.log("Kurtarma araması: cihaz bilinen ayar kombinasyonlarında aranıyor...")
@@ -275,7 +306,7 @@ class CommScanner:
         sets["parity"] = list(dict.fromkeys([target.parity, prev.parity, self.start.parity] + sets["parity"]))
         kinds = list(sets.keys())
         for combo in itertools.product(*[sets[k] for k in kinds]):
-            self.job.check()
+            self._check()
             ls = prev.copy()
             for k, v in zip(kinds, combo):
                 ls = apply_setting(ls, k, v, self.o)
@@ -287,7 +318,7 @@ class CommScanner:
     # ---- tek adim
     def step(self, p: dict, val: dict, purpose: str = "test") -> bool:
         """True: devam edilebilir, False: cihaz kayboldu."""
-        self.job.check()
+        self._check()
         kind = p["kind"]
         reg = int(p["register"])
         prev = self.cur.copy()
@@ -324,7 +355,7 @@ class CommScanner:
         expect = int(val["raw"]) & 0xFFFF
         got = None
         for _ in range(max(1, self.o.verify_retries)):
-            self.job.check()
+            self._check()
             got = self.probe(target, reg, retries=0)
             if got is not None:
                 break
@@ -433,6 +464,7 @@ class CommScanner:
             for w in self.func_warn:
                 job.log("UYARI: " + w)
             if self.o.functional_check:
+                self.baseline_functional()
                 job.log("Fonksiyon testi adresleri: " + ", ".join(str(r.address) for r in self.func_regs)
                         + ("" if self.o.func_addresses.strip() else " (tablodaki ilk 10 R/W register)"))
 
@@ -450,6 +482,45 @@ class CommScanner:
                         plan.append(("one", p, v))
                     if ov is not None:
                         plan.append(("restore", p, ov))
+            try:
+                self._run_plan(plan)
+            except Cancelled:
+                run.aborted = "Kullanıcı tarafından durduruldu"
+                job.log("Durduruldu — cihaz orijinal ayarlarına geri döndürülüyor...")
+            if run.aborted and run.aborted != "Kullanıcı tarafından durduruldu":
+                return run
+            if self.o.restore:
+                self.restoring = True
+                job.set_phase("Orijinal ayarlara geri dönüş")
+                # once adres disindakiler, en son adres
+                for p in sorted(self.params, key=lambda p: p["kind"] == "address"):
+                    ov = self.original_value(p)
+                    if ov is not None and current_setting(self.cur, p["kind"]) != ov["setting"]:
+                        if not self.step(p, ov, "geri dönüş"):
+                            run.aborted = (run.aborted + "; " if run.aborted else "") + "Geri dönüş sırasında cihaz kayboldu"
+                            return run
+                self.restoring = False
+            if run.aborted:
+                raise Cancelled()
+            return run
+        finally:
+            self.restoring = False
+            run.final_settings = self.cur.describe()
+            run.finished = time.strftime("%Y-%m-%d %H:%M:%S")
+            tests = [s for s in run.steps]
+            run.summary = {
+                "steps": len(tests),
+                OK: sum(1 for s in tests if s.status == OK),
+                WARN: sum(1 for s in tests if s.status == WARN),
+                FAIL: sum(1 for s in tests if s.status == FAIL),
+            }
+            job.progress = 1.0
+            self.client.close()
+            job.log(f"Ayar tarama bitti: {run.summary[OK]} OK, {run.summary[WARN]} UYARI, {run.summary[FAIL]} HATA. Son ayar: {run.final_settings}")
+
+    def _run_plan(self, plan):
+        job, run = self.job, self.run
+        if True:  # noqa: SIM108
             total = max(1, len(plan))
             job.set_phase(f"Ayar tarama ({ {'matrix': 'tüm kombinasyonlar', 'full': 'tam test'}.get(self.o.mode, 'sıralı')}): {total} plan adımı")
             if self.o.mode in ("matrix", "full"):
@@ -484,29 +555,7 @@ class CommScanner:
                     if not self.step(p, v, "geri dönüş" if item[0] == "restore" else "test"):
                         run.aborted = "Cihazla bağlantı kayboldu"
                         return run
-            if self.o.restore:
-                job.set_phase("Orijinal ayarlara geri dönüş")
-                # once adres disindakiler, en son adres
-                for p in sorted(self.params, key=lambda p: p["kind"] == "address"):
-                    ov = self.original_value(p)
-                    if ov is not None and current_setting(self.cur, p["kind"]) != ov["setting"]:
-                        if not self.step(p, ov, "geri dönüş"):
-                            run.aborted = "Geri dönüş sırasında cihaz kayboldu"
-                            return run
             return run
-        finally:
-            run.final_settings = self.cur.describe()
-            run.finished = time.strftime("%Y-%m-%d %H:%M:%S")
-            tests = [s for s in run.steps]
-            run.summary = {
-                "steps": len(tests),
-                OK: sum(1 for s in tests if s.status == OK),
-                WARN: sum(1 for s in tests if s.status == WARN),
-                FAIL: sum(1 for s in tests if s.status == FAIL),
-            }
-            job.progress = 1.0
-            self.client.close()
-            job.log(f"Ayar tarama bitti: {run.summary[OK]} OK, {run.summary[WARN]} UYARI, {run.summary[FAIL]} HATA. Son ayar: {run.final_settings}")
 
 
 def run_comm_scan(job: Job, regs, start: LineSettings, params, opts: ScanOptions, sim_device=None) -> ScanRun:
