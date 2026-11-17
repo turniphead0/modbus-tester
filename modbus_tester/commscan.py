@@ -233,7 +233,8 @@ class CommScanner:
                     r = Register(address=a, name="(tabloda yok)", access="RW")
                 out.append(r)
             return out, warn
-        out = [r for r in regs if r.access == "RW" and not r.comm_param and not r.skip][:limit]
+        out = [r for r in regs if r.access == "RW" and not r.comm_param and not r.skip
+               and not getattr(r, "danger", "") and not getattr(r, "needs_password", False)][:limit]
         return out, warn
 
     def functional(self) -> (str, str):

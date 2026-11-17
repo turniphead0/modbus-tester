@@ -33,6 +33,7 @@ class TestOptions:
     write_only_regs: bool = False    # sadece W registerlara yaz (geri okuma yok)
     restore: bool = True             # testten sonra orijinal degerleri geri yaz
     skip_comm: bool = True           # haberlesme ayar registerlarini yazma testinden cikar
+    fab_write: bool = False          # sifreli (fabrika ayari) registerlara da yazma testi yap; once sifre yazilir
     settle_ms: int = 0               # yazma ile geri okuma arasi bekleme
     word_order_big: bool = True
     address_offset: int = 0          # tablodaki adres - offset = protokol adresi
@@ -211,12 +212,55 @@ class RegisterTester:
             return False
         if self.o.skip_comm and r.comm_param:
             return False
+        return self.may_write(r)
+
+    def may_write(self, r: Register) -> bool:
+        """Tehlikeli registerlara hic, sifreli (fabrika) registerlara sadece secenek aciksa yazilir."""
+        if getattr(r, "danger", ""):
+            return False
+        if getattr(r, "needs_password", False) and not self.o.fab_write:
+            return False
         return True
+
+    # ---- sifre (fabrika ayarlari)
+    def _install_unlock(self):
+        self.pw_regs = [r for r in self.regs if getattr(r, "password_value", None) is not None]
+        self.pw_targets = {self.pa(r) + i for r in self.regs if getattr(r, "needs_password", False) for i in range(r.words)}
+        if not (self.pw_regs and self.o.fab_write):
+            return
+        w1, wn = self.c.write_register, self.c.write_registers
+
+        def unlock():
+            for p in self.pw_regs:
+                try:
+                    w1(self.pa(p), p.password_value & 0xFFFF)
+                except ModbusError as e:
+                    self.job.log(f"UYARI: şifre registerı {p.address} yazılamadı: {e}")
+
+        def write_register(addr, value, *a, **k):
+            if addr in self.pw_targets:
+                unlock()
+            return w1(addr, value, *a, **k)
+
+        def write_registers(addr, values, *a, **k):
+            if any(addr + i in self.pw_targets for i in range(len(values))):
+                unlock()
+            return wn(addr, values, *a, **k)
+        self.c.write_register = write_register
+        self.c.write_registers = write_registers
+        self.job.log("Fabrika ayarı yazma testi açık: şifreli registerlara her yazmadan önce şifre yazılacak ("
+                     + ", ".join(f"{p.address}={p.password_value}" for p in self.pw_regs) + ")")
 
     # ---- testler
     def run(self) -> None:
         job = self.job
+        self._install_unlock()
         active = [r for r in self.regs if not r.skip]
+        for r in active:
+            if getattr(r, "danger", ""):
+                self.res[r.address].notes.append(f"Yazma testi yapılmadı: {r.danger}")
+            elif getattr(r, "needs_password", False) and not self.o.fab_write and r.writable:
+                self.res[r.address].notes.append("Fabrika ayarı (şifreli): yazma testi kapalı, sadece okundu")
         for r in self.regs:
             if r.skip:
                 for k in TEST_KEYS:
@@ -264,8 +308,12 @@ class RegisterTester:
             res.value = fmt_value(v)
             res.raw = " ".join(f"0x{w:04X}" for w in words)
             res.read = OK
+            mask = _to_int(r.na_value)
             if self.is_na(r, words):
-                res.notes.append("Okunan değer 'Value If Not Available' ile aynı")
+                res.notes.append(f"Okunan değer 0x{words[0]:04X}: tablodaki 'Value If Not Available / Bit Maskesi' değeriyle aynı (özellik yok olabilir)")
+            elif mask == 0xFF and r.words == 1 and not r.signed and words[0] & 0xFF00:
+                res.read = WARN
+                res.notes.append(f"Okunan değer (0x{words[0]:04X}) bit maskesi 0x00FF dışında (1 byte'lık register)")
             elif (r.min is not None and v < r.min) or (r.max is not None and v > r.max):
                 res.read = WARN
                 res.notes.append(f"Okunan değer ({fmt_value(v)}) Min/Max ({fmt_value(r.min)}..{fmt_value(r.max)}) dışında")
@@ -284,7 +332,8 @@ class RegisterTester:
             res = self.res[r.address]
             if not self.in_write_test(r):
                 res.write = SKIP
-                res.notes.append("Haberleşme ayarı - yazma testi 'Ayar Tarama' modunda yapılır")
+                if r.comm_param and self.o.skip_comm:
+                    res.notes.append("Haberleşme ayarı - yazma testi 'Ayar Tarama' modunda yapılır")
                 continue
             if r.access == "W":
                 if not self.o.write_only_regs:
@@ -396,7 +445,7 @@ class RegisterTester:
 
     def t_ro(self, regs, prog):
         self.job.set_phase("Salt okunur koruma testi (R registerlara yazma reddedilmeli)")
-        rr = [r for r in regs if r.access == "R"]
+        rr = [r for r in regs if r.access == "R" and self.may_write(r)]
         for i, r in enumerate(rr):
             self.job.current = r.address
             self.job.check()

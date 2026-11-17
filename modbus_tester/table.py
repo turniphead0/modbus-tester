@@ -16,12 +16,12 @@ COLUMN_ALIASES = {
     "fmt": ["format", "type", "datatype", "veritipi", "tip", "tur"],
     "words": ["wordcounts", "wordcount", "words", "word", "count", "registercount", "uzunluk", "wordsayisi"],
     "mcu_byte": ["mcubyte", "byte", "bytes"],
-    "name": ["designation", "name", "description", "aciklama", "parametre", "parameter", "isim", "tanim", "ad"],
-    "unit": ["unit", "birim"],
-    "access": ["r/w", "rw", "access", "erisim", "okuma/yazma", "o/y", "mode"],
-    "remarks": ["remarks", "remark", "notes", "note", "not", "notlar", "aciklamalar", "comment"],
+    "name": ["designation", "baslik", "name", "description", "aciklama", "parametre", "parameter", "isim", "tanim", "ad"],
+    "unit": ["unit", "birim", "bicim"],
+    "access": ["r/w", "rw", "access", "erisim", "okuma/yazma", "o/y", "mode", "r:okumaw:yazma", "r:readw:write"],
+    "remarks": ["remarks", "remark", "notes", "note", "not", "notlar", "aciklamalar", "aciklama", "comment"],
     "multiplier": ["multiplier", "carpan", "scale", "olcek"],
-    "na_value": ["valueifnotavailable", "navalue", "notavailable", "yokdeger", "gecersizdeger"],
+    "na_value": ["valueifnotavailable", "navalue", "notavailable", "yokdeger", "gecersizdeger", "bitmaskesi", "bitmask", "mask", "maske"],
     "min": ["min", "minimum", "enaz"],
     "max": ["max", "maximum", "encok"],
 }
@@ -105,6 +105,9 @@ class Register:
     skip: bool = False
     skip_reason: str = ""
     comm_param: str = ""     # address/baud/parity/stopbits/databits (otomatik tespit)
+    danger: str = ""         # dolu ise bu registera test amacli ASLA yazilmaz (orn. RS485'i kapatan register)
+    needs_password: bool = False   # fabrika ayari: yazmadan once sifre registerlari yazilmali
+    password_value: Optional[int] = None  # sifre registeri ise yazilacak sabit deger
 
     @property
     def readable(self) -> bool:
@@ -201,7 +204,10 @@ def rows_to_registers(rows: List[List]) -> Tuple[List[Register], List[str]]:
     """Ham tablo satirlarindan register listesi uretir. Baslik satirini kendisi bulur."""
     warnings: List[str] = []
     cols = None
+    ncols = 0
     section = ""
+    section_access = ""
+    has_password = False
     regs: List[Register] = []
     seen = set()
     for row in rows:
@@ -210,6 +216,7 @@ def rows_to_registers(rows: List[List]) -> Tuple[List[Register], List[str]]:
             continue
         if _looks_like_header(row):
             cols = _map_columns(row)
+            ncols = max(cols.values()) + 1
             continue
         if cols is None:
             continue
@@ -225,15 +232,19 @@ def rows_to_registers(rows: List[List]) -> Tuple[List[Register], List[str]]:
                 addr = int(hx, 16)
         if addr is None:
             # Bolum basligi (ornek: "Settings", "Device Identification")
-            texts = [c for c in row if c]
-            if len(texts) == 1 and len(texts[0]) < 60:
+            # (tablonun saginda kod/aciklama kolonlari olabilir; sadece tablo kolonlarina bakilir)
+            texts = [c for c in row[:ncols] if c]
+            if len(texts) == 1 and len(texts[0]) < 80:
                 section = texts[0]
+                section_access = section_access_from_title(section)
             continue
         fmt = (g("fmt") or "UINT16").upper().replace(" ", "")
         if fmt in ("-", ""):
             fmt = "UINT16"
         words = _to_int(g("words")) or FMT_WORDS.get(fmt, 1)
         access = normalize_access(g("access"))
+        if not access and "access" not in cols:
+            access = section_access   # R/W kolonu yoksa bolum basligindan: "(Read Only)", "(Read - Write)", "(Write only)"
         reg = Register(
             address=addr,
             hex=g("hex") or f"{addr:04X}",
@@ -260,6 +271,22 @@ def rows_to_registers(rows: List[List]) -> Tuple[List[Register], List[str]]:
             warnings.append(f"{addr} {reg.name}: Min ({fmt_value(reg.min)}) > Max ({fmt_value(reg.max)}) - tablo hatası, aralık kontrolü yapılmayacak")
             reg.remarks = (reg.remarks + " " if reg.remarks else "") + f"[Tablo: Min={fmt_value(reg.min)} Max={fmt_value(reg.max)}]"
             reg.min = reg.max = None
+        mask = _to_int(reg.na_value)
+        if mask in (0xFF, 0xFFFF) and reg.max is not None and reg.max > mask and not reg.signed:
+            warnings.append(f"{addr} {reg.name}: Max ({fmt_value(reg.max)}) bit maskesini (0x{mask:0{4}X}) aşıyor - "
+                            f"test aralığı {mask} ile sınırlandı")
+            reg.remarks = (reg.remarks + " " if reg.remarks else "") + f"[Tablo: Max={fmt_value(reg.max)}, maske 0x{mask:04X}]"
+            reg.max = float(mask)
+            if reg.min is not None and reg.min > reg.max:
+                reg.min = None
+        d = danger_reason(reg)
+        if d:
+            reg.danger = d
+            warnings.append(f"{addr} {reg.name}: {d} - bu registera test amaçlı yazılmayacak")
+        if re.search(r"password|sifre", section.translate(TR_MAP).lower()) and access == "W" \
+                and reg.min is not None and reg.min == reg.max:
+            reg.password_value = int(reg.min)
+            has_password = True
         if addr in seen:
             warnings.append(f"{addr}: tabloda birden fazla kez geçiyor, ilk kayıt kullanıldı")
             continue
@@ -267,8 +294,41 @@ def rows_to_registers(rows: List[List]) -> Tuple[List[Register], List[str]]:
         regs.append(reg)
     if cols is None:
         raise ValueError("Tabloda başlık satırı bulunamadı (en az 'Address' ve 'R/W' veya 'Designation' kolonları gerekli)")
+    if has_password:
+        pw = [r for r in regs if r.password_value is not None]
+        for r in regs:
+            if r.password_value is None:
+                r.needs_password = True
+        warnings.append("Şifre bölümü bulundu (" + ", ".join(f"{r.address}={r.password_value}" for r in pw)
+                        + "): bu tablodaki registerlar fabrika ayarı sayılır; yazma testi varsayılan olarak kapalı, "
+                          "açılırsa her yazmadan önce şifre yazılır")
     detect_comm_params(regs)
     return regs, warnings
+
+
+DANGER_PATTERNS = [
+    (r"haberlesme\s*kapan", "Yazılırsa haberleşme kapanabilir"),
+    (r"fabrika\s*ayarlar\w*\s*yukle|factory\s*(reset|default)", "Fabrika ayarlarını yükleme komutu içeriyor"),
+]
+
+
+def danger_reason(r: Register) -> str:
+    text = f"{r.name} {r.remarks}".translate(TR_MAP).lower()
+    for pat, why in DANGER_PATTERNS:
+        if re.search(pat, text):
+            return why
+    return ""
+
+
+def section_access_from_title(title: str) -> str:
+    t = title.translate(TR_MAP).lower().replace(" ", "")
+    if "read-write" in t or "readwrite" in t or "okuma-yazma" in t or "(r/w)" in t:
+        return "RW"
+    if "writeonly" in t or "sadeceyazma" in t:
+        return "W"
+    if "readonly" in t or "saltokunur" in t or "sadeceokuma" in t:
+        return "R"
+    return ""
 
 
 def load_pdf(data: bytes) -> List[List]:
@@ -378,8 +438,22 @@ def detect_comm_params(regs: List[Register]) -> None:
             r.comm_param = "stopbits"
         elif ("DATA" in n or "VERI" in n) and "BIT" in n:
             r.comm_param = "databits"
-        elif ("MODBUS" in n or "SLAVE" in n or "CIHAZ" in n or "DEVICE" in n) and ("ADDRESS" in n or "ADRES" in n or "ID" in n.split()):
+        elif ("MODBUS" in n or "SLAVE" in n) and ("ADDRESS" in n or "ADRES" in n or "ID" in re.split(r"[\s_]+", n)):
             r.comm_param = "address"
+    if not any(r.comm_param == "address" for r in regs):
+        for r in regs:
+            n = r.name.translate(TR_MAP).upper()
+            if r.writable and not r.needs_password and ("CIHAZ" in n or "DEVICE" in n) and ("ADDRESS" in n or "ADRES" in n):
+                r.comm_param = "address"
+                break
+    # her tur icin sadece ilk register kullanilir
+    seen_kinds = set()
+    for r in regs:
+        if r.comm_param:
+            if r.comm_param in seen_kinds or r.needs_password:
+                r.comm_param = ""
+            else:
+                seen_kinds.add(r.comm_param)
 
 
 def default_comm_config(regs: List[Register], current_slave: int = 1) -> List[dict]:

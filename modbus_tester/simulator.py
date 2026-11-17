@@ -52,6 +52,10 @@ class SimDevice:
         self.no_block_write: bool = bool(self.faults.get("no_block_write", False))
         self.reject_values: Dict[str, list] = self.faults.get("reject_comm", {})  # {"baud":[0]}
         self.pending: Optional[LineSettings] = None
+        # fabrika ayarlari: sifre registerlarina dogru deger yazilmadan sifreli registerlara yazilamaz
+        self.pw = {r.address: r.password_value for r in regs if getattr(r, "password_value", None) is not None}
+        self.locked_regs = {r.address for r in regs if getattr(r, "needs_password", False)}
+        self.pw_ok: Dict[int, bool] = {}
         self.lock = threading.Lock()
         self.log: List[str] = []
 
@@ -68,6 +72,10 @@ class SimDevice:
             return 2
         if not r.writable and addr not in self.accept_ro:
             return 2
+        if addr in self.pw:
+            return None if words[0] == self.pw[addr] else 3
+        if addr in self.locked_regs and not (self.pw and all(self.pw_ok.get(a) for a in self.pw)):
+            return 1   # sifre girilmeden fabrika ayarina yazma: izin yok
         validator = self.faults.get("validator")
         if validator is not None:
             code = validator(addr, words[0], self.mem)
@@ -107,9 +115,20 @@ class SimDevice:
         self.pending = new
 
     def _store(self, addr, words):
+        if addr in self.pw:
+            self.pw_ok[addr] = True
+            return
         i = 0
         while i < len(words):
             r = self.owner[addr + i]
+            mask = None
+            try:
+                mask = int(str(r.na_value), 0) if r.na_value else None
+            except ValueError:
+                pass
+            if mask == 0xFF and r.words == 1 and not r.signed:
+                words = list(words)
+                words[i] &= 0xFF          # MCU'da 1 byte saklanir
             if r.address not in self.no_store:
                 for j in range(r.words):
                     if 0 <= i + j < len(words):

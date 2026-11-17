@@ -20,7 +20,7 @@ else:
     BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 
-from modbus_tester.table import load_table, save_csv, default_comm_config, encode_value, decode_value, fmt_value  # noqa: E402
+from modbus_tester.table import load_table, save_csv, default_comm_config, detect_comm_params, encode_value, decode_value, fmt_value  # noqa: E402
 from modbus_tester.rtu import LineSettings, ModbusClient, ModbusError  # noqa: E402
 from modbus_tester.simulator import SimDevice  # noqa: E402
 from modbus_tester.tester import TestOptions, run_register_test, summarize, make_groups  # noqa: E402
@@ -232,13 +232,14 @@ class App(tk.Tk):
     def _build_table(self, parent):
         f = ttk.LabelFrame(parent, text=" 2. Register tablosu ", padding=8)
         f.pack(fill="both", expand=True, pady=(8, 0))
-        ttk.Label(f, text="PDF, Excel (.xlsx) veya CSV.\nKolonlar: Address, Address Hex, Format, Word Counts,\n"
-                          "Designation, Unit, R/W, Remarks, Multiplier,\nValue If Not Available, Min, Max",
+        ttk.Label(f, text="PDF, Excel (.xlsx/.xlsm) veya CSV. Birden fazla dosya seçilebilir\n(örn. register tablosu + fabrika ayarları tablosu).\n"
+                          "Kolonlar: Address, Format, Word Counts, Designation/Başlık,\nR/W, Remarks/Açıklama, Bit Maskesi, Min, Max",
                   foreground="#555", justify="left").pack(anchor="w")
         b = ttk.Frame(f)
         b.pack(fill="x", pady=6)
         ttk.Button(b, text="Tablo yükle...", style="Accent.TButton", command=self.load_table_dialog).pack(side="left")
-        ttk.Button(b, text="CSV olarak kaydet", command=self.export_csv).pack(side="left", padx=6)
+        ttk.Button(b, text="Tablo ekle...", command=lambda: self.load_table_dialog(append=True)).pack(side="left", padx=6)
+        ttk.Button(b, text="CSV olarak kaydet", command=self.export_csv).pack(side="left")
         self.lbl_table = ttk.Label(f, text="Tablo yüklenmedi", wraplength=300)
         self.lbl_table.pack(anchor="w")
         ttk.Label(f, text="Tablo uyarıları:").pack(anchor="w", pady=(6, 0))
@@ -267,6 +268,7 @@ class App(tk.Tk):
             "restore": tk.BooleanVar(value=True), "ro_protection": tk.BooleanVar(value=True),
             "range_protection": tk.BooleanVar(value=False), "write_only_regs": tk.BooleanVar(value=False),
             "skip_comm": tk.BooleanVar(value=True), "word_order_big": tk.BooleanVar(value=True),
+            "fab_write": tk.BooleanVar(value=False),
             "read_fc": tk.StringVar(value="FC03 Holding Register"), "block_size": tk.StringVar(value="16"),
             "settle_ms": tk.StringVar(value="0"), "address_offset": tk.StringVar(value="0"),
         }
@@ -283,6 +285,7 @@ class App(tk.Tk):
         self._opt_check(g, "Sadece yazılabilir (W) registerlara yaz", o["write_only_regs"], 2, 1)
         self._opt_check(g, "Haberleşme ayar registerlarını yazma testinden çıkar", o["skip_comm"], 3, 1)
         self._opt_check(g, "32-bit değerlerde yüksek word önce", o["word_order_big"], 4, 1)
+        self._opt_check(g, "Fabrika ayarlarına (şifreli registerlar) da yazma testi yap — dikkat!", o["fab_write"], 5, 0)
         g2 = ttk.LabelFrame(t, text=" Parametreler ", padding=8)
         g2.pack(fill="x", pady=8)
         self._opt_entry(g2, "R registerlar için okuma fonksiyonu", o["read_fc"], 0, 0,
@@ -378,13 +381,16 @@ class App(tk.Tk):
         self.v_filter.trace_add("write", lambda *a: self.render_regs())
         ttk.Button(b, text="Seçilileri atla", command=lambda: self.set_skip(True)).pack(side="left", padx=2)
         ttk.Button(b, text="Seçilileri dahil et", command=lambda: self.set_skip(False)).pack(side="left", padx=2)
-        ttk.Label(b, text="(Çift tıklama: atla/dahil et. Ctrl/Shift ile çoklu seçim)", foreground="#666").pack(side="left", padx=8)
+        ttk.Label(b, text="(Çift tıklama: atla/dahil et. Sarı: haberleşme ayarı, mor: fabrika ayarı/şifreli, kırmızı: test amaçlı yazılmaz)",
+                  foreground="#666").pack(side="left", padx=8)
         cols = ("skip", "address", "hex", "fmt", "name", "access", "min", "max", "section", "remarks")
         heads = ("Atla", "Address", "Hex", "Format", "Designation", "R/W", "Min", "Max", "Bölüm", "Remarks")
         widths = (45, 70, 60, 70, 230, 50, 55, 55, 150, 300)
         self.tv_regs = self._tree(t, cols, heads, widths)
         self.tv_regs.tag_configure("skip", foreground="#999")
         self.tv_regs.tag_configure("comm", background="#fff4d6")
+        self.tv_regs.tag_configure("fab", background="#efe7f7")
+        self.tv_regs.tag_configure("danger", background="#fde0de")
         self.tv_regs.bind("<Double-1>", self.toggle_skip)
 
     def _build_manual_tab(self):
@@ -771,6 +777,13 @@ class App(tk.Tk):
             messagebox.showwarning(APP_NAME, f"Değer seçilen formata uymuyor ({typ}): {e}\nÖrnek: 12, -5, 3.14, 0x1A, 0b1010")
             return
         v = next(iter(enc.values()))[1]
+        dg = [r for r in regs if r.danger]
+        if dg and not messagebox.askyesno(APP_NAME, "Seçilen registerlardan bazıları tehlikeli olarak işaretli:\n"
+                                          + "\n".join(f"{r.address} {r.name}: {r.danger}" for r in dg[:5])
+                                          + "\n\nYine de yazılsın mı?"):
+            return
+        pw_regs = [r for r in self.regs if r.password_value is not None]
+        need_pw = any(r.needs_password for r in regs) and pw_regs
         ro = [r for r in regs if r.access == "R"]
         if ro and not messagebox.askyesno(APP_NAME, f"{len(ro)} register tabloda salt okunur (R). Yine de yazılsın mı?"):
             return
@@ -785,6 +798,12 @@ class App(tk.Tk):
         def fn(c, fc, off, wob):
             for r in regs:
                 words = enc[r.address][0]
+                if need_pw and r.needs_password:
+                    for p in pw_regs:
+                        try:
+                            c.write_register(p.address - off, p.password_value & 0xFFFF)
+                        except ModbusError as e:
+                            self._post(self._log_manual, f"Şifre registerı {p.address} yazılamadı: {e}")
                 try:
                     if len(words) == 1 and not use16:
                         c.write_register(r.address - off, words[0])
@@ -1059,23 +1078,43 @@ class App(tk.Tk):
             self.after(0, lambda: self.lbl_probe.configure(text=msg, foreground=col))
         threading.Thread(target=work, daemon=True).start()
 
-    def load_table_dialog(self):
-        p = filedialog.askopenfilename(title="Register tablosu seç", filetypes=[
+    def load_table_dialog(self, append=False):
+        ps = filedialog.askopenfilenames(title="Register tablosu seç (birden fazla seçilebilir)", filetypes=[
             ("Register tablosu", "*.pdf *.xlsx *.xlsm *.csv *.txt *.json"), ("Tüm dosyalar", "*.*")])
-        if p:
-            self.load_table_file(p)
+        if ps:
+            paths = list(ps)
+            if append and self.regs:
+                paths = [p for p in getattr(self, "cfg_last_tables", []) if p not in paths] + paths
+            self.load_table_file(paths)
 
-    def load_table_file(self, p):
-        try:
-            with open(p, "rb") as fh:
-                regs, warns = load_table(p, fh.read())
-        except Exception as e:
-            messagebox.showerror(APP_NAME, f"Tablo okunamadı:\n{e}")
-            return
+    def load_table_file(self, paths):
+        if isinstance(paths, str):
+            paths = [paths]
+        regs, warns = [], []
+        seen = set()
+        for p in paths:
+            try:
+                with open(p, "rb") as fh:
+                    rr, ww = load_table(p, fh.read())
+            except Exception as e:
+                messagebox.showerror(APP_NAME, f"Tablo okunamadı ({os.path.basename(p)}):\n{e}")
+                return
+            pre = f"[{os.path.basename(p)}] " if len(paths) > 1 else ""
+            warns.extend(pre + w for w in ww)
+            for r in rr:
+                if r.address in seen:
+                    warns.append(f"{pre}{r.address} {r.name}: başka tabloda da var, ilk kayıt kullanıldı")
+                    continue
+                seen.add(r.address)
+                regs.append(r)
         if not regs:
             messagebox.showerror(APP_NAME, "Tabloda register bulunamadı")
             return
-        self.regs, self.warnings, self.table_name = regs, warns, os.path.basename(p)
+        if len(paths) > 1:
+            detect_comm_params(regs)
+        p = paths[0]
+        self.regs, self.warnings = regs, warns
+        self.table_name = " + ".join(os.path.basename(x) for x in paths)
         self.sim = None
         nR = sum(1 for r in regs if r.access == "R")
         nRW = sum(1 for r in regs if r.access == "RW")
@@ -1092,6 +1131,11 @@ class App(tk.Tk):
         self.render_regs()
         self.man_state = {}
         self.render_manual()
+        nF = sum(1 for r in regs if r.needs_password)
+        nD = sum(1 for r in regs if r.danger)
+        if nF or nD:
+            self.lbl_table.configure(text=self.lbl_table.cget("text") + f"\nfabrika ayarı (şifreli): {nF}, yazılmayacak (tehlikeli): {nD}")
+        self.cfg_last_tables = list(paths)
         self.cfg_last_table = p
         self.save_cfg()
 
@@ -1122,8 +1166,14 @@ class App(tk.Tk):
                 tags.append("skip")
             if r.comm_param:
                 tags.append("comm")
+            if r.danger:
+                tags.append("danger")
+            elif r.needs_password or r.password_value is not None:
+                tags.append("fab")
             fv = lambda v: "" if v is None else (int(v) if float(v).is_integer() else v)
-            name = r.name + (f"  [{KIND_LABEL[r.comm_param]}]" if r.comm_param else "")
+            name = r.name + (f"  [{KIND_LABEL[r.comm_param]}]" if r.comm_param else "") + \
+                (f"  [YAZILMAZ: {r.danger}]" if r.danger else "") + \
+                (f"  [ŞİFRE={r.password_value}]" if r.password_value is not None else "")
             tv.insert("", "end", iid=str(r.address), tags=tags, values=(
                 "✔" if r.skip else "", r.address, r.hex, r.fmt, name, {"RW": "R/W"}.get(r.access, r.access or "-"),
                 fv(r.min), fv(r.max), r.section, r.remarks))
@@ -1262,7 +1312,7 @@ class App(tk.Tk):
                 block_read=o["block_read"].get(), block_write=o["block_write"].get(),
                 block_size=self._int(o["block_size"], "Blok boyutu", 2, 123), ro_protection=o["ro_protection"].get(),
                 range_protection=o["range_protection"].get(), write_only_regs=o["write_only_regs"].get(),
-                restore=o["restore"].get(), skip_comm=o["skip_comm"].get(),
+                restore=o["restore"].get(), skip_comm=o["skip_comm"].get(), fab_write=o["fab_write"].get(),
                 settle_ms=self._int(o["settle_ms"], "Yazma sonrası bekleme", 0, 60000),
                 word_order_big=o["word_order_big"].get(), address_offset=self._int(o["address_offset"], "Adres ofseti"))
         except ValueError as e:
@@ -1270,6 +1320,13 @@ class App(tk.Tk):
             return
         if not opts.restore and (opts.single_write or opts.block_write):
             if not messagebox.askyesno(APP_NAME, "Orijinal değerleri geri yazma kapalı. Cihazdaki değerler test değerlerinde kalacak. Devam edilsin mi?"):
+                return
+        nfab = sum(1 for r in self.regs if r.needs_password and not r.skip and r.writable)
+        if opts.fab_write and nfab:
+            if not messagebox.askyesno(APP_NAME, f"Fabrika ayarlarına yazma testi açık: {nfab} şifreli registera (cihaz ID, seri no, "
+                                       "model ayarları, varsayılan ayarlar...) test değerleri yazılıp sonra geri yüklenecek.\n"
+                                       "Tehlikeli olarak işaretli registerlara (örn. RS485, fabrika ayarı yükleme) yine de yazılmaz.\n\n"
+                                       "Devam edilsin mi?"):
                 return
         sim = self.get_sim(ls) if ls.transport == "sim" else None
         regs = self.regs
@@ -1576,6 +1633,7 @@ class App(tk.Tk):
         try:
             data = {k: v.get() for k, v in self._vars().items()}
             data["last_table"] = getattr(self, "cfg_last_table", "")
+            data["last_tables"] = getattr(self, "cfg_last_tables", [])
             with open(self.cfg_path, "w", encoding="utf-8") as fh:
                 json.dump(data, fh, ensure_ascii=False, indent=1)
         except Exception:
@@ -1594,9 +1652,9 @@ class App(tk.Tk):
                 except tk.TclError:
                     pass
         self.update_conn_ui()
-        lt = data.get("last_table")
-        if lt and os.path.exists(lt):
-            self.after(100, lambda: self.load_table_file(lt))
+        lts = [x for x in (data.get("last_tables") or [data.get("last_table")]) if x and os.path.exists(x)]
+        if lts:
+            self.after(100, lambda: self.load_table_file(lts))
 
     def on_close(self):
         if self.busy():
